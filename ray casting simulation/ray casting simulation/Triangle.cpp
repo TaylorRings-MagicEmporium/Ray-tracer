@@ -8,6 +8,12 @@ Triangle::Triangle(glm::vec3 SurColour, glm::vec3 pointA, glm::vec3 pointB, glm:
 
 	position = glm::vec3((pointA.x + pointB.x + pointC.x) / 3.0f, (pointA.y + pointB.y + pointC.y) / 3.0f, (pointA.z + pointB.z + pointC.z) / 3.0f);
 
+
+}
+
+
+bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) {
+
 	glm::vec3 edge1 = pointB - pointA;
 	glm::vec3 edge2 = pointC - pointA;
 
@@ -15,12 +21,7 @@ Triangle::Triangle(glm::vec3 SurColour, glm::vec3 pointA, glm::vec3 pointB, glm:
 	//and normal is direction
 	Normal = glm::cross(edge1, edge2);
 	TriArea = glm::dot(Normal, Normal);
-}
-
-
-bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) {
-
-
+	 
 	float u;
 	float v;
 	//step 1: finding p

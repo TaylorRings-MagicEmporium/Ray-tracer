@@ -140,6 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="objloader.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="ray casting simulation.cpp" />
     <ClCompile Include="Shape.cpp" />
@@ -147,6 +148,7 @@
     <ClCompile Include="Triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="objloader.h" />
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Shape.h" />
     <ClInclude Include="Sphere.h" />

@@ -7,7 +7,7 @@ class Shape
 public:
 	glm::vec3 position;
 	glm::vec3 SurColour;
-	float ep = 0.000001;
+	float ep = 1e-6;
 	virtual bool IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) = 0;
 };
 
