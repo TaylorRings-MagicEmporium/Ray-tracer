@@ -7,6 +7,7 @@
 #include "Sphere.h"
 #include "Shape.h"
 #include "Plane.h"
+#include "Triangle.h"
 
 #define PI 3.14159265
 
@@ -15,13 +16,14 @@ int main()
     const int WIDTH = 640;
     const int HEIGHT = 480;
 
-    Shape* ShapeList[5] = {
+    Shape* ShapeList[6] = {
        new Sphere(glm::vec3(0,0,-20),glm::vec3(1.0,0.32,0.36),4),
        new Sphere(glm::vec3(5,-1,-15),glm::vec3(0.9,0.76,0.46),2),
        new Sphere(glm::vec3(5,0,-25),glm::vec3(0.65,0.77,0.97),3),
        new Sphere(glm::vec3(-5.5,0,-15),glm::vec3(0.9,0.9,0.9),3),
-       //new Sphere(glm::vec3(0,-10004,-20),glm::vec3(0.2,0.2,0.2),10000)
-       new Plane(glm::vec3(0,-10004,-20),glm::vec3(0.2,0.2,0.2),glm::vec3(0,1,0))
+       ////new Sphere(glm::vec3(0,-10004,-20),glm::vec3(0.2,0.2,0.2),10000)
+       new Plane(glm::vec3(0,-10004,-20),glm::vec3(0.2,0.2,0.2),glm::vec3(0,1,0)),
+       new Triangle(glm::vec3(0,1,0),glm::vec3(0,1,-2),glm::vec3(-1.9,-1,-2),glm::vec3(1.6,-0.5,-2))
     };
 
     glm::vec3** image = new glm::vec3 * [WIDTH];
@@ -31,9 +33,6 @@ int main()
 
     float IAR = (float)WIDTH / (float)HEIGHT; // these need to be FLOAT
     glm::vec2 pixelN, pixelR, pixelC;
-    //float a = 1 / 2 * PI; // should be 
-    //float tanValue = glm::tan(a / 0.5f);
-    //float tanValue = tanf(15.0 * PI / 180.0);
     
     float tanValue = glm::tan(glm::radians(60.0f) / 2.0f);
     
@@ -51,7 +50,7 @@ int main()
             float t;
             float smallestT;
             bool first = true;
-            for (int i = 0; i < 5; i++){
+            for (int i = 0; i < 6; i++){
                 if (ShapeList[i]->IntersectTest(rayOrigin, glm::normalize(CamSpace - rayOrigin), t)) { //if true and output is t
                     if (first) { // if it's the first value
                         smallestT = t; //classify it as the smallest
