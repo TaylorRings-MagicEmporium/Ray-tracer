@@ -5,62 +5,37 @@
 #include <glm/glm.hpp>
 #include <fstream>
 #include "Sphere.h"
+#include "Shape.h"
+#include "Plane.h"
 
 #define PI 3.14159265
-
-
-bool RaySphereIntersection(Sphere sp, glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) {
-
-    float t0, t1; // two maximum possible points of intersection
-
-    glm::vec3 l = sp.position - RayOrigin; // vector length between ray origin and sphere origin
-    float Tca = glm::dot(l, RayDir); // the projection of the vector length onto the direction
-    if (Tca < 0) return false; // if it's negative, due to the projection being in the opposite direction of the ray direction, false.
-
-    float s = glm::dot(l, l) - Tca * Tca; // squared magnitude of l and Tca
-    if (s > sp.radius * sp.radius) return false; //if the squared length between the centre to right angled to the ray is bigger than the squared radius, then it's outside the sphere
-
-    float Thc = glm::sqrt(sp.radius * sp.radius - s); // vector subtraction to find the length of Thc (from p to centre to middle)
-    t0 = Tca - Thc;
-    t1 = Tca + Thc;
-
-    if (t0 > t1) std::swap(t0, t1); // smaller value is closer to ray origin than bigger value
-    if (t0 < 0) {
-        t0 = t1;
-        if (t0 < 0) {
-            return false; // if both values are negative then this is a incorrect ray intersection;
-        }
-    }
-
-    t = t0; // the first thing we will render is the closest to the camera (the bigger value cannot be seen if opaque)
-    return true;
-}
 
 int main()
 {
     const int WIDTH = 640;
     const int HEIGHT = 480;
 
-    Sphere sphereList[5] = {
-        Sphere(glm::vec3(0,0,-20),4,glm::vec3(1.0,0.32,0.36)),
-        Sphere(glm::vec3(5,-1,-15),2,glm::vec3(0.9,0.76,0.46)),
-        Sphere(glm::vec3(5,0,-25),3,glm::vec3(0.65,0.77,0.97)),
-        Sphere(glm::vec3(-5.5,0,-15),3,glm::vec3(0.9,0.9,0.9)),
-        Sphere(glm::vec3(0,-10004,-20),10000,glm::vec3(0.2,0.2,0.2))
+    Shape* ShapeList[5] = {
+       new Sphere(glm::vec3(0,0,-20),glm::vec3(1.0,0.32,0.36),4),
+       new Sphere(glm::vec3(5,-1,-15),glm::vec3(0.9,0.76,0.46),2),
+       new Sphere(glm::vec3(5,0,-25),glm::vec3(0.65,0.77,0.97),3),
+       new Sphere(glm::vec3(-5.5,0,-15),glm::vec3(0.9,0.9,0.9),3),
+       //new Sphere(glm::vec3(0,-10004,-20),glm::vec3(0.2,0.2,0.2),10000)
+       new Plane(glm::vec3(0,-10004,-20),glm::vec3(0.2,0.2,0.2),glm::vec3(0,1,0))
     };
 
     glm::vec3** image = new glm::vec3 * [WIDTH];
     for (int i = 0; i < WIDTH; i++) image[i] = new glm::vec3[HEIGHT];
     
-    glm::vec3 rayOrigin = glm::vec3(0);
+    glm::vec3 rayOrigin = glm::vec3(0,0,0);
 
-    float IAR = (float)WIDTH / (float)HEIGHT;
+    float IAR = (float)WIDTH / (float)HEIGHT; // these need to be FLOAT
     glm::vec2 pixelN, pixelR, pixelC;
     //float a = 1 / 2 * PI; // should be 
     //float tanValue = glm::tan(a / 0.5f);
     //float tanValue = tanf(15.0 * PI / 180.0);
     
-    float tanValue = glm::tan(glm::radians(30.0f) / 2.0f);
+    float tanValue = glm::tan(glm::radians(60.0f) / 2.0f);
     
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
@@ -77,21 +52,22 @@ int main()
             float smallestT;
             bool first = true;
             for (int i = 0; i < 5; i++){
-                if (RaySphereIntersection(sphereList[i], rayOrigin, glm::normalize(CamSpace - rayOrigin), t)) {
-                    if (first) {
-                        smallestT = t;
+                if (ShapeList[i]->IntersectTest(rayOrigin, glm::normalize(CamSpace - rayOrigin), t)) { //if true and output is t
+                    if (first) { // if it's the first value
+                        smallestT = t; //classify it as the smallest
                         first = false;
-                        PixelColour = sphereList[i].SurColour;
+                        PixelColour = ShapeList[i]->SurColour; // we know now that at least one object is being intersected, so the colour is from the background to the hit.shape
                     }
                     else {
-                        if (t < smallestT) {
-                            smallestT = t;
-                            PixelColour = sphereList[i].SurColour;
+                        if (t < smallestT) { // if t is closer to the ray origin than the smallest t
+                            smallestT = t; // replace the smallest value and the pixel colour of the now closest hit.
+                            PixelColour = ShapeList[i]->SurColour;
                         }
                     }
                 }
             }
-
+             //if there is no intersection, it is presumed that there is no collision at all. this means that the final colour is the background colour.
+            
             image[x][y] = PixelColour;
             
         }
@@ -99,7 +75,7 @@ int main()
 
     // ray direction = cameraSpace - ray origin (camera origin)
 
-    std::ofstream ofs("./ray_Casting_Spheres.ppm", std::ios::out | std::ios::binary);
+    std::ofstream ofs("./testing plane ground.ppm", std::ios::out | std::ios::binary);
     ofs << "P6\n" << WIDTH << " " << HEIGHT << "\n255\n";
     for (unsigned y = 0; y < HEIGHT; ++y) {
         for (unsigned x = 0; x < WIDTH; ++x) {
