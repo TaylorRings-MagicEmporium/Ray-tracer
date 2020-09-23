@@ -1,9 +1,13 @@
 #include "Triangle.h"
 
-Triangle::Triangle(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 diffuseColour, float shininess) {
+Triangle::Triangle(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 normalA, glm::vec3 normalB, glm::vec3 normalC, glm::vec3 diffuseColour, float shininess) {
 	this->pointA = pointA;
 	this->pointB = pointB;
 	this->pointC = pointC;
+
+	this->NormalA = normalA;
+	this->NormalB = normalB;
+	this->NormalC = normalC;
 
 	this->diffuseColour = diffuseColour;
 	this->ambientColour = diffuseColour;
@@ -43,20 +47,21 @@ bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out
 
 	//step 2 inside-outside
 	glm::vec3 C;
-
-	glm::vec3 edge3 = pointB - pointA;
-	glm::vec3 PTA = point - pointA;
-	C = glm::cross(edge3, PTA);
+	glm::vec3 CheckEdge;
+	glm::vec3 PTV;
+	CheckEdge = pointB - pointA;
+	PTV = point - pointA;
+	C = glm::cross(CheckEdge, PTV);
 	if (glm::dot(Normal, C) < 0) return false; //outside
 
-	glm::vec3 edge4 = pointC - pointB;
-	glm::vec3 PTB = point - pointB;
-	C = glm::cross(edge4, PTB);
+	CheckEdge = pointC - pointB;
+	PTV = point - pointB;
+	C = glm::cross(CheckEdge, PTV);
 	if (u = glm::dot(Normal, C) < 0) return false; //outside
 
-	glm::vec3 edge5 = pointA - pointC;
-	glm::vec3 PTC = point - pointC;
-	C = glm::cross(edge5, PTC);
+	CheckEdge = pointA - pointC;
+	PTV = point - pointC;
+	C = glm::cross(CheckEdge, PTV);
 	if (v = glm::dot(Normal, C) < 0) return false; //outside
 
 
@@ -65,7 +70,7 @@ bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out
 
 	out.distance = t;
 	out.intersectionPoint = point;
-	out.normal = Normal;
+	out.normal = glm::normalize((1.0f - u - v) * NormalA + u * NormalB + v * NormalC);
 
 	return true;
 

@@ -15,14 +15,14 @@
 
 #define PI 3.14159265
 
-//void AddMesh(std::vector<glm::vec3>& vertices, std::vector<Shape*>& ShapeList) {
-//
-//    for (int i = 0; i < vertices.size(); i+= 3) {
-//        ShapeList.push_back(new Triangle(glm::vec3((float)rand()/RAND_MAX, (float)rand()/RAND_MAX, (float)rand()/RAND_MAX), vertices[i] + glm::vec3(-1.5,-1.5,-5), vertices[i+ 1] + glm::vec3(-1.5, -1.5, -5), vertices[i + 2] + glm::vec3(-1.5, -1.5, -5)));
-//    }
-//
-//    std::cout << "added mesh triangles!" << std::endl;
-//}
+void AddMesh(std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& normals, std::vector<Shape*>& ShapeList) {
+
+    for (int i = 0; i < vertices.size(); i+= 3) {
+        ShapeList.push_back(new Triangle(vertices[i] + glm::vec3(-1.5,-1.5,-5), vertices[i+ 1] + glm::vec3(-1.5, -1.5, -5), vertices[i + 2] + glm::vec3(-1.5, -1.5, -5),normals[i],normals[i + 1],normals[i + 2],glm::vec3(0.5,0.5,0.0),100));
+    }
+
+    std::cout << "added mesh triangles!" << std::endl;
+}
 
 int main()
 {
@@ -33,19 +33,19 @@ int main()
     std::vector<glm::vec3> normals;
 
 
-    //bool res = loadOBJ("OBJ files/teapot_simple.obj", vertices, normals);
+    bool res = loadOBJ("OBJ files/teapot_simple.obj", vertices, normals);
 
     std::vector<Shape*> ShapeList;
-    ShapeList.push_back(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 128));
+    //ShapeList.push_back(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 128));
     //ShapeList.push_back(new Sphere(glm::vec3(5, -1, -15), 2,glm::vec3(0.9, 0.76, 0.46), 128));
     //ShapeList.push_back(new Sphere(glm::vec3(5, 0, -25), 3,glm::vec3(0.65, 0.77, 0.97), 128));
     //ShapeList.push_back(new Sphere(glm::vec3(-5.5, 0, -15), 3,glm::vec3(0.9, 0.9, 0.9), 128));
-    ShapeList.push_back(new Plane(glm::vec3(-10, -1, -10),glm::vec3(0,1,0), glm::vec3(0.8, 0.8, 0.8),128));
-    ShapeList.push_back(new Triangle(glm::vec3(0, 1, -2) + glm::vec3(0,0,0), glm::vec3(-1.9, -1, -2) + glm::vec3(0, 0, 0), glm::vec3(1.6, -0.5, -2) + glm::vec3(0, 0, 0),glm::vec3(0,1,0),0));
+    //ShapeList.push_back(new Plane(glm::vec3(-10, -1, -10),glm::vec3(0,1,0), glm::vec3(0.8, 0.8, 0.8),128));
+    //ShapeList.push_back(new Triangle(glm::vec3(0, 1, -2), glm::vec3(-1.9, -1, -2), glm::vec3(1.6, -0.5, -2), glm::normalize(glm::vec3(0.0,0.6,1.0)),glm::vec3(-0.4,-0.4,1.0),glm::vec3(0.4,-0.4,1.0),glm::vec3(0.5,0.5,0.0),100));
 
-    //AddMesh(vertices, ShapeList);
+    AddMesh(vertices, normals, ShapeList);
 
-    PointLight L = PointLight(glm::vec3(0, 10, 0), glm::vec3(1.0, 1.0, 1.0));
+    PointLight L = PointLight(glm::vec3(1,30,1), glm::vec3(1.0, 1.0, 1.0));
 
     glm::vec3** image = new glm::vec3 * [WIDTH];
     for (int i = 0; i < WIDTH; i++) image[i] = new glm::vec3[HEIGHT];
@@ -94,7 +94,7 @@ int main()
 
     // ray direction = cameraSpace - ray origin (camera origin)
 
-    std::ofstream ofs("./Spec light.ppm", std::ios::out | std::ios::binary);
+    std::ofstream ofs("./triangle phong.ppm", std::ios::out | std::ios::binary);
     ofs << "P6\n" << WIDTH << " " << HEIGHT << "\n255\n";
     for (unsigned y = 0; y < HEIGHT; ++y) {
         for (unsigned x = 0; x < WIDTH; ++x) {
