@@ -1,18 +1,15 @@
 #include "Triangle.h"
 
-Triangle::Triangle(glm::vec3 SurColour, glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC) {
-	this->SurColour = SurColour;
+Triangle::Triangle(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::vec3 diffuseColour, float shininess) {
 	this->pointA = pointA;
 	this->pointB = pointB;
 	this->pointC = pointC;
 
+	this->diffuseColour = diffuseColour;
+	this->ambientColour = diffuseColour;
+	this->Shininess = shininess;
+
 	position = glm::vec3((pointA.x + pointB.x + pointC.x) / 3.0f, (pointA.y + pointB.y + pointC.y) / 3.0f, (pointA.z + pointB.z + pointC.z) / 3.0f);
-
-
-}
-
-
-bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) {
 
 	glm::vec3 edge1 = pointB - pointA;
 	glm::vec3 edge2 = pointC - pointA;
@@ -21,6 +18,10 @@ bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) {
 	//and normal is direction
 	Normal = glm::cross(edge1, edge2);
 	TriArea = glm::dot(Normal, Normal);
+}
+
+
+bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out) {
 	 
 	float u;
 	float v;
@@ -34,7 +35,7 @@ bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) {
 	float d = glm::dot(Normal, pointA); // calculate 
 
 	//compute t
-	t = (glm::dot(Normal, RayOrigin) + d) / NDR;
+	float t = (glm::dot(Normal, RayOrigin) + d) / NDR;
 	if (t < 0) return false;
 
 	//compute intersect point
@@ -61,6 +62,10 @@ bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) {
 
 	u /= TriArea;
 	v /= TriArea;
+
+	out.distance = t;
+	out.intersectionPoint = point;
+	out.normal = Normal;
 
 	return true;
 

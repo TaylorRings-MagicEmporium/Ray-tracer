@@ -1,12 +1,16 @@
 #include "Sphere.h"
 
-Sphere::Sphere(glm::vec3 position, glm::vec3 SurColour, float radius) {
+Sphere::Sphere(glm::vec3 position, float radius, glm::vec3 DiffuseColour, float shininess) {
 	this->position = position;
 	this->radius = radius;
-	this->SurColour = SurColour;
+
+    this->diffuseColour = DiffuseColour;
+    this->ambientColour = DiffuseColour;
+    this->Shininess = shininess;
+    
 }
 
-bool Sphere::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) {
+bool Sphere::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out) {
     float t0, t1; // two maximum possible points of intersection
 
     glm::vec3 l = position - RayOrigin; // vector length between ray origin and sphere origin
@@ -28,6 +32,9 @@ bool Sphere::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, float& t) {
         }
     }
 
-    t = t0; // the first thing we will render is the closest to the camera (the bigger value cannot be seen if opaque)
+    //float t = t0; // the first thing we will render is the closest to the camera (the bigger value cannot be seen if opaque)
+    out.distance = t0;
+    out.intersectionPoint = RayOrigin + t0 * RayDir;
+    out.normal = glm::normalize(out.intersectionPoint - position);
     return true;
 }
