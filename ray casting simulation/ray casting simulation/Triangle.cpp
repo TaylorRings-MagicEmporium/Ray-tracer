@@ -45,7 +45,7 @@ bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out
 	else {
 		float t = glm::dot(edge2, glm::cross(dist, edge1)) / glm::dot(edge1, perV);
 		out.distance = t;
-		out.intersectionPoint = RayOrigin + t * RayDir;
+		out.intersectionPoint = (1.0f - u - v) * pointA + u * pointB + v * pointC;
 		out.normal = glm::normalize((1.0f - u - v) * NormalA + u * NormalB + v * NormalC);
 		return true;
 	}
