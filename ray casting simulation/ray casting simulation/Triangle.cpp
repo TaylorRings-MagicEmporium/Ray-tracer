@@ -27,51 +27,75 @@ Triangle::Triangle(glm::vec3 pointA, glm::vec3 pointB, glm::vec3 pointC, glm::ve
 
 bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out) {
 	 
-	float u;
-	float v;
-	//step 1: finding p
-	// is ray plane parallel?
-	float NDR = glm::dot(Normal, RayDir); // the direction value between normal and ray direction.
-	if (glm::abs(NDR) < ep) return false; // the ray is at parallel with the triangle so we cannot see it.
+
+	glm::vec3 edge1 = pointB - pointA;
+	glm::vec3 edge2 = pointC - pointA;
+
+	glm::vec3 dist = (RayOrigin - pointA);
+	glm::vec3 perV = glm::cross(RayDir, edge2);
+	float u = glm::dot(dist, perV) / glm::dot(edge1, perV);
+	float v = glm::dot(RayDir, glm::cross(dist, edge1)) / glm::dot(edge1, perV);
+
+	if (u < 0 || u > 1) {
+		return false;
+	}
+	else if (v < 0 || u + v > 1) {
+		return false;
+	}
+	else {
+		float t = glm::dot(edge2, glm::cross(dist, edge1)) / glm::dot(edge1, perV);
+		out.distance = t;
+		out.intersectionPoint = RayOrigin + t * RayDir;
+		out.normal = glm::normalize((1.0f - u - v) * NormalA + u * NormalB + v * NormalC);
+		return true;
+	}
+	return false;
+
+	//float u;
+	//float v;
+	////step 1: finding p
+	//// is ray plane parallel?
+	//float NDR = glm::dot(Normal, RayDir); // the direction value between normal and ray direction.
+	//if (glm::abs(NDR) < ep) return false; // the ray is at parallel with the triangle so we cannot see it.
 
 
-	//compute d
-	float d = glm::dot(Normal, pointA); // calculate 
+	////compute d
+	//float d = glm::dot(Normal, pointA); // calculate 
 
-	//compute t
-	float t = (glm::dot(Normal, RayOrigin) + d) / NDR;
-	if (t < 0) return false;
+	////compute t
+	//float t = (glm::dot(Normal, RayOrigin) + d) / NDR;
+	//if (t < 0) return false;
 
-	//compute intersect point
-	glm::vec3 point = RayOrigin + t * RayDir;
+	////compute intersect point
+	//glm::vec3 point = RayOrigin + t * RayDir;
 
-	//step 2 inside-outside
-	glm::vec3 C;
-	glm::vec3 CheckEdge;
-	glm::vec3 PTV;
-	CheckEdge = pointB - pointA;
-	PTV = point - pointA;
-	C = glm::cross(CheckEdge, PTV);
-	if (glm::dot(Normal, C) < 0) return false; //outside
+	////step 2 inside-outside
+	//glm::vec3 C;
+	//glm::vec3 CheckEdge;
+	//glm::vec3 PTV;
+	//CheckEdge = pointB - pointA;
+	//PTV = point - pointA;
+	//C = glm::cross(CheckEdge, PTV);
+	//if (glm::dot(Normal, C) < 0) return false; //outside
 
-	CheckEdge = pointC - pointB;
-	PTV = point - pointB;
-	C = glm::cross(CheckEdge, PTV);
-	if (u = glm::dot(Normal, C) < 0) return false; //outside
+	//CheckEdge = pointC - pointB;
+	//PTV = point - pointB;
+	//C = glm::cross(CheckEdge, PTV);
+	//if (u = glm::dot(Normal, C) < 0) return false; //outside
 
-	CheckEdge = pointA - pointC;
-	PTV = point - pointC;
-	C = glm::cross(CheckEdge, PTV);
-	if (v = glm::dot(Normal, C) < 0) return false; //outside
+	//CheckEdge = pointA - pointC;
+	//PTV = point - pointC;
+	//C = glm::cross(CheckEdge, PTV);
+	//if (v = glm::dot(Normal, C) < 0) return false; //outside
 
 
-	u /= TriArea;
-	v /= TriArea;
+	//u /= TriArea;
+	//v /= TriArea;
 
-	out.distance = t;
-	out.intersectionPoint = point;
-	out.normal = glm::normalize((1.0f - u - v) * NormalA + u * NormalB + v * NormalC);
+	//out.distance = t;
+	//out.intersectionPoint = point;
+	//out.normal = glm::normalize((1.0f - u - v) * NormalA + u * NormalB + v * NormalC);
 
-	return true;
+	//return true;
 
 }

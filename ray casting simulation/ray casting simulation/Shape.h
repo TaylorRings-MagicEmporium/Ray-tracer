@@ -32,6 +32,7 @@ public:
 	glm::vec3 GetSpecularLight(PointLight light, glm::vec3 LI, glm::vec3 IntersectionNormal, glm::vec3 RayDir) {
 		glm::vec3 r = LI - 2.0f * glm::dot(LI, IntersectionNormal) * IntersectionNormal;
 		//glm::vec3 r = glm::reflect(LI, IntersectionNormal);
+		glm::vec3 g = glm::normalize(r);
 		return SpecularColour * light.intensity * glm::pow(glm::max(0.0f, glm::dot(glm::normalize(r), RayDir)), Shininess);
 	}
 };
