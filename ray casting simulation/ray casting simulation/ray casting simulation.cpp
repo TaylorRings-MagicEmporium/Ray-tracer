@@ -82,29 +82,46 @@ int main()
     SDL_Surface* screenSurface = NULL;
     if (!InitSDL(window, screenSurface)) return -1;
 
-
-
-
     float fullRenderPercentage = (float)WIDTH * (float)HEIGHT;
     std::vector<GameObject> objects;
 
     // SETUP COUNTER
+    
+    GameObject g = GameObject(glm::vec3(0, 0, 0));
+    //g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 128)); // red sphere
+    //objects.push_back(g);
 
+    //g = GameObject(glm::vec3(0, 0, 0));
+    //g.AddShape(new Sphere(glm::vec3(5, -1, -15), 2, glm::vec3(0.9, 0.76, 0.46), 128)); // green sphere
+    //objects.push_back(g);
+
+    //g = GameObject(glm::vec3(0, 0, 0));
+    //g.AddShape(new Sphere(glm::vec3(5, 0, -25), 3, glm::vec3(0.65, 0.77, 0.97), 128)); // blue sphere
+    //objects.push_back(g);
+
+    //g = GameObject(glm::vec3(0, 0, 0));
+    //g.AddShape(new Sphere(glm::vec3(-5.5, 0, -15), 3, glm::vec3(0.9, 0.9, 0.9), 128)); // cyan sphere
+    //objects.push_back(g);
+
+    g = GameObject(glm::vec3(2, 0, -10));
+    g.AddMesh("OBJ files/teapot_simple_smooth.obj", glm::vec3(0.5, 0.5, 0), 100.0f);
+    objects.push_back(g);
+
+    g = GameObject(glm::vec3(0, 0, 0));
+    g.AddShape(new Plane(glm::vec3(0, -4, 0), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 0.0f)); // light gray plane
+    objects.push_back(g);
 
     //objects.push_back(GameObject("OBJ files/teapot_simple_smooth.obj", glm::vec3(0,0,-5), glm::vec3(0.5, 0.5, 0), 100.0f));
 
-    std::vector<Shape*> ShapeList;
-    ShapeList.push_back(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 128)); // red
-    ShapeList.push_back(new Sphere(glm::vec3(5, -1, -15), 2,glm::vec3(0.9, 0.76, 0.46), 128)); //green
-    ShapeList.push_back(new Sphere(glm::vec3(5, 0, -25), 3,glm::vec3(0.65, 0.77, 0.97), 128)); // blue
-    ShapeList.push_back(new Sphere(glm::vec3(-5.5, 0, -15), 3,glm::vec3(0.9, 0.9, 0.9), 128)); //cyan
-    ShapeList.push_back(new Plane(glm::vec3(0, -4, 0),glm::vec3(0,1,0), glm::vec3(0.8, 0.8, 0.8),0.0f));
+    //std::vector<Shape*> ShapeList;
+    //ShapeList.push_back(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 128)); // red
+    //ShapeList.push_back(new Sphere(glm::vec3(5, -1, -15), 2,glm::vec3(0.9, 0.76, 0.46), 128)); //green
+    //ShapeList.push_back(new Sphere(glm::vec3(5, 0, -25), 3,glm::vec3(0.65, 0.77, 0.97), 128)); // blue
+    //ShapeList.push_back(new Sphere(glm::vec3(-5.5, 0, -15), 3,glm::vec3(0.9, 0.9, 0.9), 128)); //cyan
+    //ShapeList.push_back(new Plane(glm::vec3(0, -4, 0),glm::vec3(0,1,0), glm::vec3(0.8, 0.8, 0.8),0.0f));
+    
+    
     //ShapeList.push_back(new Triangle(glm::vec3(0, 1, -2), glm::vec3(-1.9, -1, -2), glm::vec3(1.6, -0.5, -2), glm::normalize(glm::vec3(0.0,0.6,1.0)),glm::vec3(-0.4,-0.4,1.0),glm::vec3(0.4,-0.4,1.0),glm::vec3(0.7,0.7,0.0),100));
-
-    for (int i = 0; i < objects.size(); i++)
-    {
-        objects[i].AddMesh(ShapeList);
-    }
 
     //PointLight L = PointLight(glm::vec3(1,3,1), glm::vec3(1.0, 1.0, 1.0));
     AreaLight AL = AreaLight(glm::vec3(1,10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5,5,5), glm::vec3(1,1,1));
@@ -133,32 +150,61 @@ int main()
 
             HitInfo dump;
             HitInfo smallestH;
-            float smallestT = 0;
+            float smallestT = 1e06;
             int closestShape = -1;
-            bool first = true;
+            int closestObject = -1;
             glm::vec3 rayDir = glm::normalize(CamSpace - rayOrigin);
-            for (int i = 0; i < ShapeList.size(); i++){
-                if (ShapeList[i]->IntersectTest(rayOrigin, rayDir, dump)) { //if true and output is t
-                    if (dump.distance < smallestT || first) {
-                        smallestT = dump.distance;
-                        smallestH = dump;
-                        first = false;
-                        closestShape = i;//classify it as the smallest
-                    }     
+            for (int a = 0; a < objects.size(); a++) {
+                if (!objects[a].BB.IntersectTest(rayOrigin, rayDir)) {
+                    for (int b = 0; b < objects[a].ShapeList.size(); b++) {
+                        if (objects[a].ShapeList[b]->IntersectTest(rayOrigin, rayDir, dump)) { //if true and output is t
+                            if (dump.distance < smallestT) {
+                                smallestT = dump.distance;
+                                    smallestH = dump;
+                                    closestShape = b;//classify it as the smallest
+                                    closestObject = a;
+                            }
+                        }
+                    }
                 }
+
             }
 
-            if (closestShape != -1) {
+            if (closestObject != -1) {
+
+                
                 int HitsDetected = 0;
-                for (int i = 0; i < AL.GridPositions.size(); i++)
+                for (int i = 0; i < AL.GridPositions.size(); i++) // for each light point on a grid
                 {
-                    glm::vec3 lightRay = AL.GridPositions[i] - smallestH.intersectionPoint;
-                    for (int a = 0; a < ShapeList.size(); a++) {
-                        if (closestShape != a) {
-                            if (ShapeList[a]->IntersectTest(smallestH.intersectionPoint + smallestH.normal * 1e-06f, glm::normalize(lightRay), dump)) {
-                                HitsDetected++;
-                                break;
+                    bool pass = false;
+                    glm::vec3 lightRay = AL.GridPositions[i] - smallestH.intersectionPoint; // calculate light ray
+                    for (int a = 0; a < objects.size(); a++) { //for each gameobject
+                        if (closestObject != a) { // if the shape is not in current closest object, then continue with intersection
+                            if (!objects[a].BB.IntersectTest(smallestH.intersectionPoint, glm::normalize(lightRay))) {
+                                for (int b = 0; b < objects[a].ShapeList.size(); b++) { //and for each shape in that gameobject 
+                                    if (objects[a].ShapeList[b]->IntersectTest(smallestH.intersectionPoint + smallestH.normal * 1e-06f, glm::normalize(lightRay), dump)) {
+                                        HitsDetected++;
+                                        pass = true;
+                                        break;
+                                    }
+                                }
                             }
+
+                        }
+                        else {
+                            for (int b = 0; b < objects[a].ShapeList.size(); b++) {
+                                if (closestShape != b) { // test whether its also not the closest shape in that object
+                                    if (objects[a].ShapeList[b]->IntersectTest(smallestH.intersectionPoint + smallestH.normal * 1e-06f, glm::normalize(lightRay), dump)) {
+                                        HitsDetected++;
+                                        pass = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (pass) {
+                            break;
                         }
                     }
                 }
@@ -166,9 +212,9 @@ int main()
 
 
                 float success = (float)HitsDetected / (float)AL.GridPositions.size();
-                PixelColour = ShapeList[closestShape]->GetAmbientLight(); // we know now that at least one object is being intersected, so the colour is from the background to the hit.shape
-                PixelColour += ShapeList[closestShape]->GetDiffuseLight(&AL, glm::normalize(AL.position - smallestH.intersectionPoint), smallestH.normal);
-                PixelColour += ShapeList[closestShape]->GetSpecularLight(&AL, glm::normalize(AL.position - smallestH.intersectionPoint), smallestH.normal, rayDir);
+                PixelColour = objects[closestObject].ShapeList[closestShape]->GetAmbientLight(); // we know now that at least one object is being intersected, so the colour is from the background to the hit.shape
+                PixelColour += objects[closestObject].ShapeList[closestShape]->GetDiffuseLight(&AL, glm::normalize(AL.position - smallestH.intersectionPoint), smallestH.normal);
+                PixelColour += objects[closestObject].ShapeList[closestShape]->GetSpecularLight(&AL, glm::normalize(AL.position - smallestH.intersectionPoint), smallestH.normal, rayDir);
                 PixelColour *= 1.0f - success;
 
 

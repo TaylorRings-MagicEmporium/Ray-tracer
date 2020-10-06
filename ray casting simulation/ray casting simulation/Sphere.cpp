@@ -7,6 +7,9 @@ Sphere::Sphere(glm::vec3 position, float radius, glm::vec3 DiffuseColour, float 
     this->diffuseColour = DiffuseColour;
     this->ambientColour = DiffuseColour;
     this->Shininess = shininess;
+
+    this->Smallest = position - glm::vec3(radius);
+    this->Biggest = position + glm::vec3(radius);
     
 }
 

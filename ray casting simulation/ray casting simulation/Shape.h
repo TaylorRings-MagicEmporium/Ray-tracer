@@ -18,6 +18,9 @@ public:
 	glm::vec3 SpecularColour = glm::vec3(0.7, 0.7, 0.7);
 	float Shininess = 0;
 	float ep = 1e-6;
+
+	glm::vec3 Smallest;
+	glm::vec3 Biggest;
 	
 
 

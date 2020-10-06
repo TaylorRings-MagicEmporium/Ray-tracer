@@ -8,6 +8,10 @@ Plane::Plane(glm::vec3 Position, glm::vec3 Normal, glm::vec3 diffuseColour, floa
 	this->diffuseColour = diffuseColour;
 	this->ambientColour = diffuseColour;
 	this->Shininess = shininess;
+
+	this->Smallest = position - glm::vec3(1e06);
+	this->Biggest = position + glm::vec3(1e06);
+
 }
 
 bool Plane::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out) {
