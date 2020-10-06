@@ -2,8 +2,10 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <fstream>
-#include "PointLight.h"
+#include "Light.h"
 #include "HitInfo.h"
+
+
 class Shape
 {
 public:
@@ -25,15 +27,15 @@ public:
 		return ambientColour * ambientIntensity;
 	}
 
-	glm::vec3 GetDiffuseLight(PointLight light, glm::vec3 LI, glm::vec3 IntersectionNormal) {
-		return diffuseColour * light.intensity * glm::max(0.0f, glm::dot(LI, IntersectionNormal));
+	glm::vec3 GetDiffuseLight(Light* light, glm::vec3 LI, glm::vec3 IntersectionNormal) {
+		return diffuseColour * light->intensity * glm::max(0.0f, glm::dot(LI, IntersectionNormal));
 	}
 
-	glm::vec3 GetSpecularLight(PointLight light, glm::vec3 LI, glm::vec3 IntersectionNormal, glm::vec3 RayDir) {
+	glm::vec3 GetSpecularLight(Light* light, glm::vec3 LI, glm::vec3 IntersectionNormal, glm::vec3 RayDir) {
 		glm::vec3 r = LI - 2.0f * glm::dot(LI, IntersectionNormal) * IntersectionNormal;
 		//glm::vec3 r = glm::reflect(LI, IntersectionNormal);
 		glm::vec3 g = glm::normalize(r);
-		return SpecularColour * light.intensity * glm::pow(glm::max(0.0f, glm::dot(glm::normalize(r), RayDir)), Shininess);
+		return SpecularColour * light->intensity * glm::pow(glm::max(0.0f, glm::dot(glm::normalize(r), RayDir)), Shininess);
 	}
 };
 
