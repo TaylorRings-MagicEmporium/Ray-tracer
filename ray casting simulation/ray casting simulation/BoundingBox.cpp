@@ -61,22 +61,6 @@ bool BoundingBox::IntersectTest(glm::vec3 rayOri, glm::vec3 rayDir) {
 	if (tMaxZ < tMax) tMax = tMaxZ; // .
 
 	return true;
-
-	//float t = glm::dot(rayDir, boxMin);
-
-
-	//glm::vec3 ip = rayOri + t * rayDir;
-
-	//if (ip.x > boxMin.x && ip.x < boxMax.x) {
-	//	if (ip.y > boxMin.y && ip.y < boxMax.y) {
-	//		if (ip.z > boxMin.z && ip.z < boxMax.z) {
-	//			return true;
-	//		}
-	//	}
-	//}
-	//return false;
-
-
 }
 
 void BoundingBox::AdjustBox(glm::vec3 boxMin, glm::vec3 boxMax) {

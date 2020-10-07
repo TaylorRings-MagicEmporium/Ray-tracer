@@ -82,7 +82,8 @@ int main()
     SDL_Surface* screenSurface = NULL;
     if (!InitSDL(window, screenSurface)) return -1;
 
-    float fullRenderPercentage = (float)WIDTH * (float)HEIGHT;
+
+
     std::vector<GameObject> objects;
 
     // SETUP COUNTER
@@ -126,7 +127,12 @@ int main()
     //PointLight L = PointLight(glm::vec3(1,3,1), glm::vec3(1.0, 1.0, 1.0));
     AreaLight AL = AreaLight(glm::vec3(1,10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5,5,5), glm::vec3(1,1,1));
 
+    //STATS 
+    //float fullRenderPercentage = (float)WIDTH * (float)HEIGHT;
     Uint32 runningTimer = SDL_GetTicks();
+    int NoRayCasts = WIDTH*HEIGHT;
+    int NoRayPrimIntersectFunctions = 0;
+    int NoRayPrimHits = 0;
 
     glm::vec3** image = new glm::vec3 * [WIDTH];
     for (int i = 0; i < WIDTH; i++) image[i] = new glm::vec3[HEIGHT];
@@ -157,7 +163,9 @@ int main()
             for (int a = 0; a < objects.size(); a++) {
                 if (!objects[a].BB.IntersectTest(rayOrigin, rayDir)) {
                     for (int b = 0; b < objects[a].ShapeList.size(); b++) {
-                        if (objects[a].ShapeList[b]->IntersectTest(rayOrigin, rayDir, dump)) { //if true and output is t
+                        NoRayPrimIntersectFunctions++;
+                        if (objects[a].ShapeList[b]->IntersectTest(rayOrigin, rayDir, dump)) {//if true and output is t
+                            NoRayPrimHits++;
                             if (dump.distance < smallestT) {
                                 smallestT = dump.distance;
                                     smallestH = dump;
@@ -182,7 +190,9 @@ int main()
                         if (closestObject != a) { // if the shape is not in current closest object, then continue with intersection
                             if (!objects[a].BB.IntersectTest(smallestH.intersectionPoint, glm::normalize(lightRay))) {
                                 for (int b = 0; b < objects[a].ShapeList.size(); b++) { //and for each shape in that gameobject 
+                                    NoRayPrimIntersectFunctions++;
                                     if (objects[a].ShapeList[b]->IntersectTest(smallestH.intersectionPoint + smallestH.normal * 1e-06f, glm::normalize(lightRay), dump)) {
+                                        NoRayPrimHits++;
                                         HitsDetected++;
                                         pass = true;
                                         break;
@@ -194,7 +204,9 @@ int main()
                         else {
                             for (int b = 0; b < objects[a].ShapeList.size(); b++) {
                                 if (closestShape != b) { // test whether its also not the closest shape in that object
+                                    NoRayPrimIntersectFunctions++;
                                     if (objects[a].ShapeList[b]->IntersectTest(smallestH.intersectionPoint + smallestH.normal * 1e-06f, glm::normalize(lightRay), dump)) {
+                                        NoRayPrimHits++;
                                         HitsDetected++;
                                         pass = true;
                                         break;
@@ -254,7 +266,12 @@ int main()
         }
     }
 
-    std::cout << " time passed: " << (float)(SDL_GetTicks() - runningTimer) / 1000.0f << " seconds" << std::endl;
+
+    std::cout << "__________ STATISTICS __________" << std::endl;
+    std::cout << "Time passed: " << (float)(SDL_GetTicks() - runningTimer) / 1000.0f << " seconds" << std::endl;
+    std::cout << "Total number of rays in object detection: " << NoRayCasts << std::endl;
+    std::cout << "Number of times ray-prim intersect is called: " << NoRayPrimIntersectFunctions << std::endl;
+    std::cout << "Number of successful ray-Prim hits: " << NoRayPrimHits << std::endl;
 
     SDL_UpdateWindowSurface(window);
     bool quit = false;
