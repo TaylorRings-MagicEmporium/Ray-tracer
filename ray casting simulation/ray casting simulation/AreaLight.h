@@ -1,6 +1,8 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <glm/gtx/compatibility.hpp>
 #include <vector>
+#include <iostream>
 #include "Light.h"
 class AreaLight : public Light
 {

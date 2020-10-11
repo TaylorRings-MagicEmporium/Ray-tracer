@@ -170,6 +170,8 @@ void RefreshScreen(SDL_Surface* screenSurface, std::vector<GameObject> objects, 
                     }
                 }
 
+
+
                 float success = (float)HitsDetected / (float)AL.GridPositions.size();
                 PixelColour = objects[closestObject].ShapeList[closestShape]->GetAmbientLight(); // we know now that at least one object is being intersected, so the colour is from the background to the hit.shape
                 PixelColour += objects[closestObject].ShapeList[closestShape]->GetDiffuseLight(&AL, glm::normalize(AL.position - smallestH.intersectionPoint), smallestH.normal);
@@ -177,8 +179,8 @@ void RefreshScreen(SDL_Surface* screenSurface, std::vector<GameObject> objects, 
                 PixelColour *= 1.0f - success;
 
 
-                //if (HitsDetected == 0) {
-
+                //if (HitsDetected == AL.GridPositions.size()) {
+                //    PixelColour = objects[closestObject].ShapeList[closestShape]->GetAmbientLight(); // we know now that at least one object is being intersected, so the colour is from the background to the hit.shape
                 //}
                 //else {
                 //    PixelColour = ShapeList[closestShape]->GetAmbientLight(); // we know now that at least one object is being intersected, so the colour is from the background to the hit.shape
