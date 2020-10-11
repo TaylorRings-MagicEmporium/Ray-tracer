@@ -17,6 +17,7 @@ public:
 
 	void AddShape(Shape* sh);
 	BoundingBox BB;
+	bool AvoidBox = false;
 	std::vector<Shape*> ShapeList;
 };
 

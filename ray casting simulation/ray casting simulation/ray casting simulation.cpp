@@ -25,6 +25,9 @@ const int HEIGHT = 480;
 
 SDL_Event event;
 
+glm::vec3 rayOrigin = glm::vec3(0);
+glm::vec3** image;
+
 bool InitSDL(SDL_Window*& window, SDL_Surface*& screenSurface) 
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -75,79 +78,25 @@ void PutPixel32_nolock(SDL_Surface*& surface, int x, int y, Uint32 colour) {
     *((Uint32*)pixel) = colour;
 }
 
-int main()
-{
-    //SECTON - SDL Setup
-    SDL_Window* window = NULL;
-    SDL_Surface* screenSurface = NULL;
-    if (!InitSDL(window, screenSurface)) return -1;
-
-
-
-    std::vector<GameObject> objects;
-
-    // SETUP COUNTER
-    
-    GameObject g = GameObject(glm::vec3(0, 0, 0));
-    //g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 128)); // red sphere
-    //objects.push_back(g);
-
-    //g = GameObject(glm::vec3(0, 0, 0));
-    //g.AddShape(new Sphere(glm::vec3(5, -1, -15), 2, glm::vec3(0.9, 0.76, 0.46), 128)); // green sphere
-    //objects.push_back(g);
-
-    //g = GameObject(glm::vec3(0, 0, 0));
-    //g.AddShape(new Sphere(glm::vec3(5, 0, -25), 3, glm::vec3(0.65, 0.77, 0.97), 128)); // blue sphere
-    //objects.push_back(g);
-
-    //g = GameObject(glm::vec3(0, 0, 0));
-    //g.AddShape(new Sphere(glm::vec3(-5.5, 0, -15), 3, glm::vec3(0.9, 0.9, 0.9), 128)); // cyan sphere
-    //objects.push_back(g);
-
-    g = GameObject(glm::vec3(2, 0, -10));
-    g.AddMesh("OBJ files/teapot_simple_smooth.obj", glm::vec3(0.5, 0.5, 0), 100.0f);
-    objects.push_back(g);
-
-    g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Plane(glm::vec3(0, -4, 0), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 0.0f)); // light gray plane
-    objects.push_back(g);
-
-    //objects.push_back(GameObject("OBJ files/teapot_simple_smooth.obj", glm::vec3(0,0,-5), glm::vec3(0.5, 0.5, 0), 100.0f));
-
-    //std::vector<Shape*> ShapeList;
-    //ShapeList.push_back(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 128)); // red
-    //ShapeList.push_back(new Sphere(glm::vec3(5, -1, -15), 2,glm::vec3(0.9, 0.76, 0.46), 128)); //green
-    //ShapeList.push_back(new Sphere(glm::vec3(5, 0, -25), 3,glm::vec3(0.65, 0.77, 0.97), 128)); // blue
-    //ShapeList.push_back(new Sphere(glm::vec3(-5.5, 0, -15), 3,glm::vec3(0.9, 0.9, 0.9), 128)); //cyan
-    //ShapeList.push_back(new Plane(glm::vec3(0, -4, 0),glm::vec3(0,1,0), glm::vec3(0.8, 0.8, 0.8),0.0f));
-    
-    
-    //ShapeList.push_back(new Triangle(glm::vec3(0, 1, -2), glm::vec3(-1.9, -1, -2), glm::vec3(1.6, -0.5, -2), glm::normalize(glm::vec3(0.0,0.6,1.0)),glm::vec3(-0.4,-0.4,1.0),glm::vec3(0.4,-0.4,1.0),glm::vec3(0.7,0.7,0.0),100));
-
-    //PointLight L = PointLight(glm::vec3(1,3,1), glm::vec3(1.0, 1.0, 1.0));
-    AreaLight AL = AreaLight(glm::vec3(1,10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5,5,5), glm::vec3(1,1,1));
-
-    //STATS 
-    //float fullRenderPercentage = (float)WIDTH * (float)HEIGHT;
+void RefreshScreen(SDL_Surface* screenSurface, std::vector<GameObject> objects, AreaLight AL) {
     Uint32 runningTimer = SDL_GetTicks();
-    int NoRayCasts = WIDTH*HEIGHT;
+    int NoRayCasts = WIDTH * HEIGHT;
     int NoRayPrimIntersectFunctions = 0;
     int NoRayPrimHits = 0;
 
-    glm::vec3** image = new glm::vec3 * [WIDTH];
-    for (int i = 0; i < WIDTH; i++) image[i] = new glm::vec3[HEIGHT];
-    glm::vec3 rayOrigin = glm::vec3(0,0,0);
+
+    //glm::vec3 rayOrigin = glm::vec3(0, 0, 0);
     float IAR = (float)WIDTH / (float)HEIGHT; // these need to be FLOAT
     glm::vec2 pixelN, pixelR, pixelC;
-    
+
     float tanValue = glm::tan(glm::radians(45.0f) / 2.0f);
     int counter = 0;
     for (int y = 0; y < HEIGHT; y++) {
         //std::cout << (float)counter * 100.0f / fullRenderPercentage << std::endl;
         for (int x = 0; x < WIDTH; x++) {
-            
+
             pixelN = glm::vec2((x + 0.5) / WIDTH, (y + 0.5) / HEIGHT); //0.5 to get middle of pixel (normallises the pixel coords with the image size. so, between 0,1);
-            pixelR = glm::vec2((2 * pixelN.x - 1)*IAR, 1 - 2 * pixelN.y); // remap to the current image size, assuming that the y height doesn't change to (-1,1)
+            pixelR = glm::vec2((2 * pixelN.x - 1) * IAR, 1 - 2 * pixelN.y); // remap to the current image size, assuming that the y height doesn't change to (-1,1)
             pixelC = pixelR * tanValue;
 
             glm::vec3 CamSpace = glm::vec3(pixelC.x, pixelC.y, -1);
@@ -161,16 +110,16 @@ int main()
             int closestObject = -1;
             glm::vec3 rayDir = glm::normalize(CamSpace - rayOrigin);
             for (int a = 0; a < objects.size(); a++) {
-                if (!objects[a].BB.IntersectTest(rayOrigin, rayDir)) {
+                if (!objects[a].BB.IntersectTest(rayOrigin, rayDir) || !objects[a].AvoidBox) {
                     for (int b = 0; b < objects[a].ShapeList.size(); b++) {
                         NoRayPrimIntersectFunctions++;
                         if (objects[a].ShapeList[b]->IntersectTest(rayOrigin, rayDir, dump)) {//if true and output is t
                             NoRayPrimHits++;
                             if (dump.distance < smallestT) {
                                 smallestT = dump.distance;
-                                    smallestH = dump;
-                                    closestShape = b;//classify it as the smallest
-                                    closestObject = a;
+                                smallestH = dump;
+                                closestShape = b;//classify it as the smallest
+                                closestObject = a;
                             }
                         }
                     }
@@ -180,7 +129,7 @@ int main()
 
             if (closestObject != -1) {
 
-                
+
                 int HitsDetected = 0;
                 for (int i = 0; i < AL.GridPositions.size(); i++) // for each light point on a grid
                 {
@@ -188,7 +137,7 @@ int main()
                     glm::vec3 lightRay = AL.GridPositions[i] - smallestH.intersectionPoint; // calculate light ray
                     for (int a = 0; a < objects.size(); a++) { //for each gameobject
                         if (closestObject != a) { // if the shape is not in current closest object, then continue with intersection
-                            if (!objects[a].BB.IntersectTest(smallestH.intersectionPoint, glm::normalize(lightRay))) {
+                            if (!objects[a].BB.IntersectTest(smallestH.intersectionPoint, glm::normalize(lightRay)) || !objects[a].AvoidBox) {
                                 for (int b = 0; b < objects[a].ShapeList.size(); b++) { //and for each shape in that gameobject 
                                     NoRayPrimIntersectFunctions++;
                                     if (objects[a].ShapeList[b]->IntersectTest(smallestH.intersectionPoint + smallestH.normal * 1e-06f, glm::normalize(lightRay), dump)) {
@@ -214,14 +163,12 @@ int main()
                                 }
                             }
                         }
-                        
+
                         if (pass) {
                             break;
                         }
                     }
                 }
-
-
 
                 float success = (float)HitsDetected / (float)AL.GridPositions.size();
                 PixelColour = objects[closestObject].ShapeList[closestShape]->GetAmbientLight(); // we know now that at least one object is being intersected, so the colour is from the background to the hit.shape
@@ -238,43 +185,71 @@ int main()
                 //}
             }
 
-            //if (closestShape != -1) {
-            //    glm::vec3 lightRay = L.position - smallestH.intersectionPoint;
-            //    bool pass = false;
-
-            //    for (int a = 0; a < ShapeList.size(); a++) {
-            //        if (closestShape != a) {
-            //            if (ShapeList[a]->IntersectTest(smallestH.intersectionPoint, glm::normalize(lightRay), dump)) {
-            //                PixelColour = ShapeList[a]->GetAmbientLight();
-            //                pass = true;
-            //                break;
-            //            }
-            //        }
-
-            //    }
-            //    if (!pass) {
-            //        PixelColour = ShapeList[closestShape]->GetAmbientLight(); // we know now that at least one object is being intersected, so the colour is from the background to the hit.shape
-            //        PixelColour += ShapeList[closestShape]->GetDiffuseLight(L, glm::normalize(lightRay), smallestH.normal);
-            //        PixelColour += ShapeList[closestShape]->GetSpecularLight(L, glm::normalize(lightRay), smallestH.normal, rayDir);
-            //    }
-            //} 
-             //if there is no intersection, it is presumed that there is no collision at all. this means that the final colour is the background colour.
-            
             image[x][y] = PixelColour;
             PutPixel32_nolock(screenSurface, x, y, convertColour(image[x][y]));
             counter++;
         }
     }
 
-
     std::cout << "__________ STATISTICS __________" << std::endl;
     std::cout << "Time passed: " << (float)(SDL_GetTicks() - runningTimer) / 1000.0f << " seconds" << std::endl;
     std::cout << "Total number of rays in object detection: " << NoRayCasts << std::endl;
     std::cout << "Number of times ray-prim intersect is called: " << NoRayPrimIntersectFunctions << std::endl;
     std::cout << "Number of successful ray-Prim hits: " << NoRayPrimHits << std::endl;
+}
 
-    SDL_UpdateWindowSurface(window);
+int main()
+{
+    //SECTON - SDL Setup
+    SDL_Window* window = NULL;
+    SDL_Surface* screenSurface = NULL;
+    if (!InitSDL(window, screenSurface)) return -1;
+
+    std::vector<GameObject> objects;
+
+    // SETUP COUNTER
+    
+    GameObject g = GameObject(glm::vec3(0, 0, 0));
+    g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 128)); // red sphere
+    objects.push_back(g);
+
+    g = GameObject(glm::vec3(0, 0, 0));
+    g.AddShape(new Sphere(glm::vec3(5, -1, -15), 2, glm::vec3(0.9, 0.76, 0.46), 128)); // green sphere
+    objects.push_back(g);
+
+    g = GameObject(glm::vec3(0, 0, 0));
+    g.AddShape(new Sphere(glm::vec3(5, 0, -25), 3, glm::vec3(0.65, 0.77, 0.97), 128)); // blue sphere
+    objects.push_back(g);
+
+    g = GameObject(glm::vec3(0, 0, 0));
+    g.AddShape(new Sphere(glm::vec3(-5.5, 0, -15), 3, glm::vec3(0.9, 0.9, 0.9), 128)); // cyan sphere
+    objects.push_back(g);
+
+    //g = GameObject(glm::vec3(2, 0, -10));
+    //g.AddMesh("OBJ files/teapot_simple_smooth.obj", glm::vec3(0.5, 0.5, 0), 100.0f);
+    //objects.push_back(g);
+
+    //g = GameObject(glm::vec3(0, 0, 0));
+    //g.AddShape(new Triangle(glm::vec3(0, 1, -2), glm::vec3(-1.9, -1, -2), glm::vec3(1.6, -0.5, -2), glm::normalize(glm::vec3(0.0, 0.6, 1.0)), glm::vec3(-0.4, -0.4, 1.0), glm::vec3(0.4, -0.4, 1.0), glm::vec3(0.7, 0.7, 0.0), 100));
+    //objects.push_back(g);
+
+    g = GameObject(glm::vec3(0, 0, 0));
+    g.AddShape(new Plane(glm::vec3(0, -10, 0), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 0.0f)); // light gray plane
+    g.AvoidBox = true;
+    objects.push_back(g);
+    
+    //ShapeList.push_back(new Triangle(glm::vec3(0, 1, -2), glm::vec3(-1.9, -1, -2), glm::vec3(1.6, -0.5, -2), glm::normalize(glm::vec3(0.0,0.6,1.0)),glm::vec3(-0.4,-0.4,1.0),glm::vec3(0.4,-0.4,1.0),glm::vec3(0.7,0.7,0.0),100));
+
+    AreaLight AL = AreaLight(glm::vec3(1,10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5,5,5), glm::vec3(1,1,1));
+
+    //STATS 
+    //float fullRenderPercentage = (float)WIDTH * (float)HEIGHT;
+
+    image = new glm::vec3 * [WIDTH];
+    for (int i = 0; i < WIDTH; i++) image[i] = new glm::vec3[HEIGHT];
+
     bool quit = false;
+    bool refresh = true;
     while (!quit) {
         //keyboard Input
         while (SDL_PollEvent(&event) != 0)
@@ -282,6 +257,47 @@ int main()
             if (event.type == SDL_QUIT) {
                 quit = true;
             }
+            else if (event.type == SDL_KEYDOWN) {
+
+                switch (event.key.keysym.sym) {
+                case SDLK_w:
+                    rayOrigin += glm::vec3(0, -0.1, 0);
+                    refresh = true;
+                    break;
+
+                case SDLK_a:
+                    rayOrigin += glm::vec3(0.1, 0, 0);
+                    refresh = true;
+                    break;
+
+                case SDLK_s:
+                    rayOrigin += glm::vec3(0, 0.1, 0);
+                    refresh = true;
+                    break;
+
+                case SDLK_d:
+                    rayOrigin += glm::vec3(-0.1, 0, 0);
+                    refresh = true;
+                    break;
+
+                case SDLK_MINUS:
+                    rayOrigin += glm::vec3(0, 0, -0.1);
+                    refresh = true;
+                    break;
+
+                case SDLK_EQUALS:
+                    rayOrigin += glm::vec3(0, 0, 0.1);
+                    refresh = true;
+                    break;
+                }
+            }
+        }
+
+        if (refresh) {
+            std::cout << "REFRESHING" << std::endl;
+            RefreshScreen(screenSurface, objects, AL);
+            SDL_UpdateWindowSurface(window);
+            refresh = false;
         }
     }
 
