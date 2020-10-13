@@ -32,5 +32,5 @@ void GameObject::AddMesh(const char* path, glm::vec3 diffuseColour, float shinin
 
 void GameObject::AddShape(Shape* sh) {
     ShapeList.push_back(sh);
-    BB.AdjustBox(position - sh->Smallest, position + sh->Biggest);
+    BB.AdjustBox(position + sh->Smallest, position + sh->Biggest);
 }
