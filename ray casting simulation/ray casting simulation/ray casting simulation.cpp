@@ -28,7 +28,7 @@ SDL_Event event;
 glm::vec3 CameraOrigin = glm::vec3(0);
 glm::vec3** image;
 std::vector<GameObject> objects;
-AreaLight AL = AreaLight(glm::vec3(1, 10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5, 5, 5), glm::vec3(1, 1, 1));
+AreaLight AL = AreaLight(glm::vec3(1, 10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5, 5, 5), glm::vec3(4,4,4));
 float ep = 1e-6;
 float MAX_SHININESS = 128;
 
@@ -91,7 +91,7 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
     int closestObject = -1;
 
     glm::vec3 PixelColour = glm::vec3(1, 1, 1); // default is white
-    glm::vec3 rayDir = glm::normalize(RayDirection - rayPos);
+    glm::vec3 rayDir = glm::normalize(RayDirection);
     for (int a = 0; a < objects.size(); a++) {
         if (objects[a].BB.IntersectTest(rayPos, rayDir) || objects[a].AvoidBox) {
             for (int b = 0; b < objects[a].ShapeList.size(); b++) {
@@ -160,11 +160,11 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
         PixelColour *= 1.0f - success;
 
         if (objects[closestObject].ShapeList[closestShape]->Shininess > 0.0f) {
-            if (CURRENT_DEPTH + 1 != MAX_DEPTH+1) {
+            if (CURRENT_DEPTH != MAX_DEPTH) {
                 //glm::vec3 reflectRay = glm::reflect(rayDir, smallestH.normal);
                 glm::vec3 reflectRay = rayDir - 2.0f * glm::dot(rayDir, smallestH.normal) * smallestH.normal;
                 //float ShiniRate = objects[closestObject].ShapeList[closestShape]->Shininess / MAX_SHININESS;
-                return (PixelColour +  Trace(smallestH.intersectionPoint + smallestH.normal * ep, reflectRay, CURRENT_DEPTH + 1, MAX_DEPTH))/3.0f  ;
+                return (PixelColour + Trace(smallestH.intersectionPoint + smallestH.normal * ep, reflectRay, CURRENT_DEPTH + 1, MAX_DEPTH))/3.0f  ;
             }
             else {
                 return PixelColour;
@@ -234,19 +234,19 @@ int main()
     // SETUP COUNTER
     
     GameObject g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 128)); // red sphere
+    g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 20)); // red sphere
     objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(5, -1, -15), 2, glm::vec3(0.9, 0.76, 0.46), 128)); // green sphere
+    g.AddShape(new Sphere(glm::vec3(5, -1, -15), 2, glm::vec3(0.9, 0.76, 0.46), 20)); // green sphere
     objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(5, 0, -25), 3, glm::vec3(0.65, 0.77, 0.97), 128)); // blue sphere
+    g.AddShape(new Sphere(glm::vec3(5, 0, -25), 3, glm::vec3(0.65, 0.77, 0.97), 20)); // blue sphere
     objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(-5.5, 0, -15), 3, glm::vec3(0.9, 0.9, 0.9), 128)); // cyan sphere
+    g.AddShape(new Sphere(glm::vec3(-5.5, 0, -10), 3, glm::vec3(0.9, 0.9, 0.9), 20)); // cyan sphere
     objects.push_back(g);
 
     //g = GameObject(glm::vec3(0, 0, 0));
