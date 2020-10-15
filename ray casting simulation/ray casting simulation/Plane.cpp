@@ -5,7 +5,7 @@ Plane::Plane(glm::vec3 Position, glm::vec3 Normal, glm::vec3 diffuseColour, floa
 	this->position = Position;
 	this->normal = Normal;
 
-	this->diffuseColour = diffuseColour;
+	this->diffuseColour = glm::vec3(0.2,0.2,0.2);
 	this->ambientColour = diffuseColour;
 	this->Shininess = shininess;
 

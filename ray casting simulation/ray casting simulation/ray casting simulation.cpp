@@ -26,7 +26,7 @@ const int HEIGHT = 480;
 SDL_Event event;
 
 glm::vec3 CameraOrigin = glm::vec3(0);
-bool Enable_Shadows = true;
+bool Enable_Shadows = false;
 glm::vec3** image;
 std::vector<GameObject> objects;
 AreaLight AL = AreaLight(glm::vec3(1, 10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5, 5, 5), glm::vec3(4,4,4));
@@ -96,7 +96,8 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
     int closestShape = -1;
     int closestObject = -1;
 
-    glm::vec3 PixelColour = glm::vec3(1, 1, 1); // default is white
+    glm::vec3 Background = glm::vec3(0,0,0);
+    glm::vec3 PixelColour = Background; // default is white
     glm::vec3 rayDir = glm::normalize(RayDirection);
     for (int a = 0; a < objects.size(); a++) {
         NoBoxRayIntersect++;
@@ -176,8 +177,14 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
             if (CURRENT_DEPTH != MAX_DEPTH) {
                 //glm::vec3 reflectRay = glm::reflect(rayDir, smallestH.normal);
                 glm::vec3 reflectRay = rayDir - 2.0f * glm::dot(rayDir, smallestH.normal) * smallestH.normal;
-                //float ShiniRate = objects[closestObject].ShapeList[closestShape]->Shininess / MAX_SHININESS;
-                return (PixelColour + Trace(smallestH.intersectionPoint + smallestH.normal * ep, reflectRay, CURRENT_DEPTH + 1, MAX_DEPTH))/3.0f  ;
+                glm::vec3 reflectiveColour = Trace(smallestH.intersectionPoint + smallestH.normal * ep, reflectRay, CURRENT_DEPTH + 1, MAX_DEPTH);
+                //if (reflectiveColour != Background) {
+                //    return glm::lerp(PixelColour, reflectiveColour, 0.7f);
+                //}
+                //else {
+                //    return PixelColour;
+                //}
+                return glm::lerp(PixelColour, reflectiveColour, 0.7f);
             }
             else {
                 return PixelColour;
@@ -185,7 +192,7 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
         }
     }
     else {
-        return glm::vec3(0,0,0);
+        return PixelColour;
     }
 
     // AFTER RUN
@@ -217,7 +224,7 @@ void RefreshScreen(SDL_Surface* screenSurface) {
 
 
 
-            glm::vec3 PixelColour = Trace(CameraOrigin, CamSpace, 0, 3);
+            glm::vec3 PixelColour = Trace(CameraOrigin, CamSpace, 0, 0);
 
             image[x][y] = PixelColour;
             PutPixel32_nolock(screenSurface, x, y, convertColour(image[x][y]));
@@ -273,7 +280,7 @@ int main()
     //objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Plane(glm::vec3(0, -4, 0), glm::vec3(0, -10, 0), glm::vec3(0.8, 0.8, 0.8), 0.0f)); // light gray plane
+    g.AddShape(new Plane(glm::vec3(-10,-1,-10), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 0.0f)); // light gray plane
     g.AvoidBox = true;
     objects.push_back(g);
     
@@ -328,7 +335,13 @@ int main()
                     CameraOrigin += glm::vec3(0, 0, 0.1);
                     refresh = true;
                     break;
+
+                case SDLK_HASH:
+                    CameraOrigin = glm::vec3(0);
+                    refresh = true;
+                    break;
                 }
+
             }
         }
 
