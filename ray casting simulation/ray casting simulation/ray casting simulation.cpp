@@ -96,7 +96,7 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
     int closestShape = -1;
     int closestObject = -1;
 
-    glm::vec3 Background = glm::vec3(0,0,0);
+    glm::vec3 Background = glm::vec3(1,1,1);
     glm::vec3 PixelColour = Background; // default is white
     glm::vec3 rayDir = glm::normalize(RayDirection);
     for (int a = 0; a < objects.size(); a++) {
@@ -170,7 +170,10 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
         
         PixelColour = objects[closestObject].ShapeList[closestShape]->GetAmbientLight(); // we know now that at least one object is being intersected, so the colour is from the background to the hit.shape
         PixelColour += objects[closestObject].ShapeList[closestShape]->GetDiffuseLight(&AL, glm::normalize(AL.position - smallestH.intersectionPoint), smallestH.normal);
-        PixelColour += objects[closestObject].ShapeList[closestShape]->GetSpecularLight(&AL, glm::normalize(AL.position - smallestH.intersectionPoint), smallestH.normal, rayDir);
+        if (objects[closestObject].ShapeList[closestShape]->Shininess > 0.0f) {
+            PixelColour += objects[closestObject].ShapeList[closestShape]->GetSpecularLight(&AL, glm::normalize(AL.position - smallestH.intersectionPoint), smallestH.normal, rayDir);
+
+        }
         PixelColour *= 1.0f - success;
 
         if (objects[closestObject].ShapeList[closestShape]->Shininess > 0.0f) {
@@ -224,7 +227,7 @@ void RefreshScreen(SDL_Surface* screenSurface) {
 
 
 
-            glm::vec3 PixelColour = Trace(CameraOrigin, CamSpace, 0, 0);
+            glm::vec3 PixelColour = Trace(CameraOrigin, CamSpace, 0, 3);
 
             image[x][y] = PixelColour;
             PutPixel32_nolock(screenSurface, x, y, convertColour(image[x][y]));
@@ -256,7 +259,7 @@ int main()
     // SETUP COUNTER
     
     GameObject g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.0, 0.32, 0.36), 20.0f)); // red sphere
+    g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.00,0.32,0.36), 20.0f)); // red sphere
     objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
@@ -280,7 +283,7 @@ int main()
     //objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Plane(glm::vec3(-10,-1,-10), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 0.0f)); // light gray plane
+    g.AddShape(new Plane(glm::vec3(-10, -4, -10), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 0.0f)); // light gray plane
     g.AvoidBox = true;
     objects.push_back(g);
     
