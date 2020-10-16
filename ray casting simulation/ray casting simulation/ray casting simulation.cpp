@@ -15,6 +15,8 @@
 #include "AreaLight.h"
 #include <vector>
 
+#include <thread>
+
 
 #include <SDL2/SDL.h>
 #undef main
@@ -27,15 +29,20 @@ SDL_Event event;
 
 glm::vec3 CameraOrigin = glm::vec3(0);
 bool Enable_Shadows = false;
-int ReflectionRate = 1;
-bool EnableReflections = true;
+int ReflectionRate = 0;
+bool EnableReflections = false;
 bool WhiteBackground = true;
+bool EnableMultiThread = true;
 glm::vec3 Background = glm::vec3(1, 1, 1);
+int SampleRate = 0;
+
 glm::vec3** image;
 std::vector<GameObject> objects;
-AreaLight AL = AreaLight(glm::vec3(1, 10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5, 5, 5), glm::vec3(4,4,4));
-float ep = 1e-6;
-float MAX_SHININESS = 128;
+AreaLight AL = AreaLight(glm::vec3(1, 10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5, 5, 5), glm::vec3(0,0,0));
+float ep = 1e-4;
+float IAR = (float)WIDTH / (float)HEIGHT; // these need to be FLOAT
+SDL_Window* window = NULL;
+SDL_Surface* screenSurface = NULL;
 
 int NoRayCasts = WIDTH * HEIGHT;
 long int NoRayPrimIntersectFunctions = 0;
@@ -207,32 +214,15 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
 
 }
 
-void RefreshScreen(SDL_Surface* screenSurface) {
-    Uint32 runningTimer = SDL_GetTicks();
+void MultiThread(int start, int end) {
+    for (int x = start; x < end; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
 
-    for (int i = 0; i < objects.size(); i++) {
-        objects[i].BB.UpdatePlaneLimits();
-    }
-    
-    if (WhiteBackground) {
-        Background = glm::vec3(1);
-    }
-    else {
-        Background = glm::vec3(0);
-    }
+            float tanValue = glm::tan(glm::radians(60.0f) / 2.0f);
 
-    float IAR = (float)WIDTH / (float)HEIGHT; // these need to be FLOAT
-    glm::vec2 pixelN, pixelR, pixelC;
-
-    float tanValue = glm::tan(glm::radians(60.0f) / 2.0f);
-    int counter = 0;
-    for (int y = 0; y < HEIGHT; y++) {
-        //std::cout << (float)counter * 100.0f / fullRenderPercentage << std::endl;
-        for (int x = 0; x < WIDTH; x++) {
-
-            pixelN = glm::vec2((x + 0.5f) / WIDTH, (y + 0.5f) / HEIGHT); //0.5 to get middle of pixel (normallises the pixel coords with the image size. so, between 0,1);
-            pixelR = glm::vec2((2.0f * pixelN.x - 1.0f) * IAR, 1.0f - 2.0f * pixelN.y); // remap to the current image size, assuming that the y height doesn't change to (-1,1)
-            pixelC = pixelR * tanValue;
+            glm::vec2 pixelN = glm::vec2((x + 0.5f) / WIDTH, (y + 0.5f) / HEIGHT); //0.5 to get middle of pixel (normallises the pixel coords with the image size. so, between 0,1);
+            glm::vec2 pixelR = glm::vec2((2.0f * pixelN.x - 1.0f) * IAR, 1.0f - 2.0f * pixelN.y); // remap to the current image size, assuming that the y height doesn't change to (-1,1)
+            glm::vec2 pixelC = pixelR * tanValue;
 
             glm::vec3 CamSpace = glm::vec3(pixelC.x, pixelC.y, -1);
 
@@ -247,9 +237,45 @@ void RefreshScreen(SDL_Surface* screenSurface) {
 
             image[x][y] = PixelColour;
             PutPixel32_nolock(screenSurface, x, y, convertColour(image[x][y]));
-            counter++;
         }
     }
+}
+
+void RefreshScreen(SDL_Surface* screenSurface) {
+    Uint32 runningTimer = SDL_GetTicks();
+
+    for (int i = 0; i < objects.size(); i++) {
+        objects[i].BB.UpdatePlaneLimits();
+    }
+    
+    if (WhiteBackground) {
+        Background = glm::vec3(1);
+    }
+    else {
+        Background = glm::vec3(0);
+    }
+
+    
+
+    if (EnableMultiThread) {
+        std::vector<std::thread> threads;
+        const int threadCount = 32;
+
+        for (int i = 0; i < threadCount; i++) {
+            threads.push_back(std::thread(MultiThread, i * WIDTH / threadCount, (i + 1) * WIDTH / threadCount));
+        }
+
+        for (int i = 0; i < threadCount; i++) {
+            threads[i].join();
+        }
+    }
+    else {
+        MultiThread(0, WIDTH);
+    }
+
+
+
+
 
     std::cout << "__________ STATISTICS __________" << std::endl;
     std::cout << "Time passed: " << (float)(SDL_GetTicks() - runningTimer) / 1000.0f << " seconds" << std::endl;
@@ -257,6 +283,10 @@ void RefreshScreen(SDL_Surface* screenSurface) {
     std::cout << "Number of times ray-prim intersect is called: " << NoRayPrimIntersectFunctions << std::endl;
     std::cout << "Number of successful ray-Prim hits: " << NoRayPrimHits << std::endl;
     std::cout << "Number of Bounding Box tests: " << NoBoxRayIntersect << std::endl;
+    std::cout << std::endl;
+    std::cout << "Reflection Level: " << ReflectionRate << std::endl;
+    std::cout << "Shadow Level: " << SampleRate << std::endl;
+    std::cout << "Multithreading: " << EnableMultiThread << std::endl;
 
     NoRayPrimHits = 0;
     NoRayPrimIntersectFunctions = 0;
@@ -266,8 +296,7 @@ void RefreshScreen(SDL_Surface* screenSurface) {
 int main()
 {
     //SECTON - SDL Setup
-    SDL_Window* window = NULL;
-    SDL_Surface* screenSurface = NULL;
+
     if (!InitSDL(window, screenSurface)) return -1;
 
     //std::vector<GameObject> objects;
@@ -275,31 +304,31 @@ int main()
     // SETUP COUNTER
     
     GameObject g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.00,0.32,0.36), 80.0f)); // red sphere
-    objects.push_back(g);
-
-    g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(5, -1, -15), 2, glm::vec3(0.9, 0.76, 0.46), 80.0f)); // green sphere
-    objects.push_back(g);
-
-    g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(5, 0, -25), 3, glm::vec3(0.65, 0.77, 0.97), 80.0f)); // blue sphere
-    objects.push_back(g);
-
-    g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(-5.5, 0, -10), 3, glm::vec3(0.9, 0.9, 0.9), 80.0f)); // cyan sphere
-    objects.push_back(g);
-
-    //g = GameObject(glm::vec3(2, 0, -7));
-    //g.AddMesh("OBJ files/teapot_simple_smooth.obj", glm::vec3(0.5, 0.5, 0), 100.0f);
+    //g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.00,0.32,0.36), 80.0f)); // red sphere
     //objects.push_back(g);
+
+    //g = GameObject(glm::vec3(0, 0, 0));
+    //g.AddShape(new Sphere(glm::vec3(5, -1, -15), 2, glm::vec3(0.9, 0.76, 0.46), 80.0f)); // green sphere
+    //objects.push_back(g);
+
+    //g = GameObject(glm::vec3(0, 0, 0));
+    //g.AddShape(new Sphere(glm::vec3(5, 0, -25), 3, glm::vec3(0.65, 0.77, 0.97), 80.0f)); // blue sphere
+    //objects.push_back(g);
+
+    //g = GameObject(glm::vec3(0, 0, 0));
+    //g.AddShape(new Sphere(glm::vec3(-5.5, 0, -10), 3, glm::vec3(0.9, 0.9, 0.9), 80.0f)); // cyan sphere
+    //objects.push_back(g);
+
+    g = GameObject(glm::vec3(2, 1, -7));
+    g.AddMesh("OBJ files/teapot_simple_smooth.obj", glm::vec3(0.5, 0.5, 0), 100.0f);
+    objects.push_back(g);
 
     //g = GameObject(glm::vec3(0, 0, 0));
     //g.AddShape(new Triangle(glm::vec3(-1, 1, -1), glm::vec3(-1.9, -1, -2), glm::vec3(1.6, -0.5, -2), glm::normalize(glm::vec3(0.0, 0.6, 1.0)), glm::vec3(-0.4, -0.4, 1.0), glm::vec3(0.4, -0.4, 1.0), glm::vec3(0.7, 0.7, 0.0), 20));
     //objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Plane(glm::vec3(-10, -4, -10), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 30.0f)); // light gray plane
+    g.AddShape(new Plane(glm::vec3(-10, -1, -10), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 20.0f)); // light gray plane
     g.AvoidBox = true;
     objects.push_back(g);
     
@@ -356,6 +385,7 @@ int main()
                     break;
 
                 case SDLK_HASH:
+                    std::cout << "CAMERA RESET" << std::endl;
                     CameraOrigin = glm::vec3(0);
                     refresh = true;
                     break;
@@ -363,23 +393,58 @@ int main()
                 case SDLK_LEFTBRACKET:
                     ReflectionRate -= 1;
                     if (ReflectionRate < 0) {
+                        EnableReflections = false;
                         ReflectionRate = 0;
+                        std::cout << "REFLECTIONS DISABLED" << std::endl;
                     }
                     refresh = true;
                     break;
 
                 case SDLK_RIGHTBRACKET:
                     ReflectionRate++;
-                    refresh = true;
-                    break;
-
-                case SDLK_r:
-                    EnableReflections = !EnableReflections;
+                    if (ReflectionRate > 0) {
+                        EnableReflections = true;
+                        std::cout << "REFLECTIONS ENABLED" << std::endl;
+                    }
                     refresh = true;
                     break;
 
                 case SDLK_b:
                     WhiteBackground = !WhiteBackground;
+                    refresh = true;
+                    break;
+                
+                case SDLK_COMMA:
+                    SampleRate -= 1;
+                    if (SampleRate < 1) {
+                        SampleRate = 0;
+                        Enable_Shadows = false;
+                        std::cout << "SHADOW OFF" << std::endl;
+                    }
+                    AL.ChangeSampleRate(SampleRate);
+                    refresh = true;
+                    break;
+
+                case SDLK_PERIOD:
+                    SampleRate++;
+                    std::cout << SampleRate << std::endl;
+                    if (SampleRate > 0) {
+                        Enable_Shadows = true;
+                        std::cout << "SHADOW ON" << std::endl;
+                    }
+                    AL.ChangeSampleRate(SampleRate);
+                    refresh = true;
+                    break;
+                
+                case SDLK_m:
+
+                    EnableMultiThread = !EnableMultiThread;
+                    if (EnableMultiThread) {
+                        std::cout << "MULTITHREADING ENABLED" << std::endl;
+                    }
+                    else {
+                        std::cout << "MULTITHREADING DISABLED" << std::endl;
+                    }
                     refresh = true;
                     break;
                 }

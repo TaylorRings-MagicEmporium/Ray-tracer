@@ -64,39 +64,74 @@ bool BoundingBox::IntersectTest(glm::vec3 rayOri, glm::vec3 rayDir) {
 
 
 
-	float t[6][3][2]; // each plane, for each axis, for each inersection
-	float rayX = rayOri.x / rayDir.x;
-	float rayY = rayOri.y / rayDir.y;
-	float rayZ = rayOri.z / rayDir.z;
-	for (int i = 0; i < 6; i++) {
-		t[i][0][0] = planeLimit[i][0].x - rayX;
-		t[i][0][1] = planeLimit[i][1].x - rayX;
+	//float t[6][3][2]; // each plane, for each axis, for each inersection
+	//float rayX = rayOri.x / rayDir.x;
+	//float rayY = rayOri.y / rayDir.y;
+	//float rayZ = rayOri.z / rayDir.z;
+	//for (int i = 0; i < 6; i++) {
+	//	t[i][0][0] = planeLimit[i][0].x - rayX;
+	//	t[i][0][1] = planeLimit[i][1].x - rayX;
 
-		t[i][1][0] = planeLimit[i][0].y - rayY;
-		t[i][1][1] = planeLimit[i][1].y - rayY;
+	//	t[i][1][0] = planeLimit[i][0].y - rayY;
+	//	t[i][1][1] = planeLimit[i][1].y - rayY;
 
-		t[i][2][0] = planeLimit[i][0].z - rayZ;
-		t[i][2][1] = planeLimit[i][1].z - rayZ;
+	//	t[i][2][0] = planeLimit[i][0].z - rayZ;
+	//	t[i][2][1] = planeLimit[i][1].z - rayZ;
 
-		glm::vec3 intersectionPoints[6];
-		intersectionPoints[0] = rayOri + rayDir * t[i][0][0];
-		intersectionPoints[1] = rayOri + rayDir * t[i][0][1];
-		intersectionPoints[2] = rayOri + rayDir * t[i][1][0];
-		intersectionPoints[3] = rayOri + rayDir * t[i][1][1];
-		intersectionPoints[4] = rayOri + rayDir * t[i][2][0];
-		intersectionPoints[5] = rayOri + rayDir * t[i][2][1];
+	//	glm::vec3 intersectionPoints[6];
+	//	intersectionPoints[0] = rayOri + rayDir * t[i][0][0];
+	//	intersectionPoints[1] = rayOri + rayDir * t[i][0][1];
+	//	intersectionPoints[2] = rayOri + rayDir * t[i][1][0];
+	//	intersectionPoints[3] = rayOri + rayDir * t[i][1][1];
+	//	intersectionPoints[4] = rayOri + rayDir * t[i][2][0];
+	//	intersectionPoints[5] = rayOri + rayDir * t[i][2][1];
 
-		for (int b = 0; b < 6; b++) {
-			if (intersectionPoints[b].x > planeLimit[i][0].x - 0.001f && intersectionPoints[b].x < planeLimit[i][1].x + 0.001f) {
-				if (intersectionPoints[b].y > planeLimit[i][0].y - 0.001f && intersectionPoints[b].y < planeLimit[i][1].y + 0.001f) {
-					if (intersectionPoints[b].z > planeLimit[i][0].z - 0.001f && intersectionPoints[b].z < planeLimit[i][1].z + 0.001f) {
-						return false;
-					}
-				}
-			}
-		}
-		return true;
-	}
+	//	for (int b = 0; b < 6; b++) {
+	//		if (intersectionPoints[b].x > planeLimit[i][0].x - 0.001f && intersectionPoints[b].x < planeLimit[i][1].x + 0.001f) {
+	//			if (intersectionPoints[b].y > planeLimit[i][0].y - 0.001f && intersectionPoints[b].y < planeLimit[i][1].y + 0.001f) {
+	//				if (intersectionPoints[b].z > planeLimit[i][0].z - 0.001f && intersectionPoints[b].z < planeLimit[i][1].z + 0.001f) {
+	//					return false;
+	//				}
+	//			}
+	//		}
+	//	}
+	//	return true;
+	//}
+
+	float tmin = (boxMin.x - rayOri.x) / rayDir.x;
+	float tmax = (boxMax.x - rayOri.x) / rayDir.x;
+
+	if (tmin > tmax) std::swap(tmin, tmax);
+
+	float tymin = (boxMin.y - rayOri.y) / rayDir.y;
+	float tymax = (boxMax.y - rayOri.y) / rayDir.y;
+
+	if (tymin > tymax) std::swap(tymin, tymax);
+
+	if ((tmin > tymax) || (tymin > tmax))
+		return false;
+
+	if (tymin > tmin)
+		tmin = tymin;
+
+	if (tymax < tmax)
+		tmax = tymax;
+
+	float tzmin = (boxMin.z - rayOri.z) / rayDir.z;
+	float tzmax = (boxMax.z - rayOri.z) / rayDir.z;
+
+	if (tzmin > tzmax) std::swap(tzmin, tzmax);
+
+	if ((tmin > tzmax) || (tzmin > tmax))
+		return false;
+
+	if (tzmin > tmin)
+		tmin = tzmin;
+
+	if (tzmax < tmax)
+		tmax = tzmax;
+
+	return true;
 
 }
 

@@ -14,6 +14,7 @@ public:
 
 	AreaLight(glm::vec3 position, glm::vec3 intensity, glm::vec3 axisSize ,glm::vec3 gridSize);
 	void GeneratePoints();
+	void ChangeSampleRate(int sampleRate);
 
 };
 
