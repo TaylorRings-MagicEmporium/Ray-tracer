@@ -27,6 +27,10 @@ SDL_Event event;
 
 glm::vec3 CameraOrigin = glm::vec3(0);
 bool Enable_Shadows = false;
+int ReflectionRate = 1;
+bool EnableReflections = true;
+bool WhiteBackground = true;
+glm::vec3 Background = glm::vec3(1, 1, 1);
 glm::vec3** image;
 std::vector<GameObject> objects;
 AreaLight AL = AreaLight(glm::vec3(1, 10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5, 5, 5), glm::vec3(4,4,4));
@@ -96,7 +100,6 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
     int closestShape = -1;
     int closestObject = -1;
 
-    glm::vec3 Background = glm::vec3(1,1,1);
     glm::vec3 PixelColour = Background; // default is white
     glm::vec3 rayDir = glm::normalize(RayDirection);
     for (int a = 0; a < objects.size(); a++) {
@@ -187,7 +190,8 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
                 //else {
                 //    return PixelColour;
                 //}
-                return glm::lerp(PixelColour, reflectiveColour, 0.7f);
+                return glm::lerp(PixelColour, reflectiveColour, objects[closestObject].ShapeList[closestShape]->Shininess/128.0f);
+                //return PixelColour + reflectiveColour;
             }
             else {
                 return PixelColour;
@@ -209,7 +213,14 @@ void RefreshScreen(SDL_Surface* screenSurface) {
     for (int i = 0; i < objects.size(); i++) {
         objects[i].BB.UpdatePlaneLimits();
     }
-    //glm::vec3 rayOrigin = glm::vec3(0, 0, 0);
+    
+    if (WhiteBackground) {
+        Background = glm::vec3(1);
+    }
+    else {
+        Background = glm::vec3(0);
+    }
+
     float IAR = (float)WIDTH / (float)HEIGHT; // these need to be FLOAT
     glm::vec2 pixelN, pixelR, pixelC;
 
@@ -225,9 +236,14 @@ void RefreshScreen(SDL_Surface* screenSurface) {
 
             glm::vec3 CamSpace = glm::vec3(pixelC.x, pixelC.y, -1);
 
+            glm::vec3 PixelColour = glm::vec3(0);
+            if (EnableReflections) {
+                PixelColour = Trace(CameraOrigin, CamSpace, 0, ReflectionRate);
+            }
+            else {
+                PixelColour = Trace(CameraOrigin, CamSpace, 0, 0);
+            }
 
-
-            glm::vec3 PixelColour = Trace(CameraOrigin, CamSpace, 0, 3);
 
             image[x][y] = PixelColour;
             PutPixel32_nolock(screenSurface, x, y, convertColour(image[x][y]));
@@ -259,22 +275,22 @@ int main()
     // SETUP COUNTER
     
     GameObject g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.00,0.32,0.36), 20.0f)); // red sphere
+    g.AddShape(new Sphere(glm::vec3(0, 0, -20), 4, glm::vec3(1.00,0.32,0.36), 80.0f)); // red sphere
     objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(5, -1, -15), 2, glm::vec3(0.9, 0.76, 0.46), 20)); // green sphere
+    g.AddShape(new Sphere(glm::vec3(5, -1, -15), 2, glm::vec3(0.9, 0.76, 0.46), 80.0f)); // green sphere
     objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(5, 0, -25), 3, glm::vec3(0.65, 0.77, 0.97), 20)); // blue sphere
+    g.AddShape(new Sphere(glm::vec3(5, 0, -25), 3, glm::vec3(0.65, 0.77, 0.97), 80.0f)); // blue sphere
     objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Sphere(glm::vec3(-5.5, 0, -10), 3, glm::vec3(0.9, 0.9, 0.9), 20)); // cyan sphere
+    g.AddShape(new Sphere(glm::vec3(-5.5, 0, -10), 3, glm::vec3(0.9, 0.9, 0.9), 80.0f)); // cyan sphere
     objects.push_back(g);
 
-    //g = GameObject(glm::vec3(4, 0, -10));
+    //g = GameObject(glm::vec3(2, 0, -7));
     //g.AddMesh("OBJ files/teapot_simple_smooth.obj", glm::vec3(0.5, 0.5, 0), 100.0f);
     //objects.push_back(g);
 
@@ -283,7 +299,7 @@ int main()
     //objects.push_back(g);
 
     g = GameObject(glm::vec3(0, 0, 0));
-    g.AddShape(new Plane(glm::vec3(-10, -4, -10), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 0.0f)); // light gray plane
+    g.AddShape(new Plane(glm::vec3(-10, -4, -10), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 30.0f)); // light gray plane
     g.AvoidBox = true;
     objects.push_back(g);
     
@@ -310,22 +326,22 @@ int main()
 
                 switch (event.key.keysym.sym) {
                 case SDLK_w:
-                    CameraOrigin += glm::vec3(0, -0.1, 0);
-                    refresh = true;
-                    break;
-
-                case SDLK_a:
-                    CameraOrigin += glm::vec3(0.1, 0, 0);
-                    refresh = true;
-                    break;
-
-                case SDLK_s:
                     CameraOrigin += glm::vec3(0, 0.1, 0);
                     refresh = true;
                     break;
 
-                case SDLK_d:
+                case SDLK_a:
                     CameraOrigin += glm::vec3(-0.1, 0, 0);
+                    refresh = true;
+                    break;
+
+                case SDLK_s:
+                    CameraOrigin += glm::vec3(0, -0.1, 0);
+                    refresh = true;
+                    break;
+
+                case SDLK_d:
+                    CameraOrigin += glm::vec3(0.1, 0, 0);
                     refresh = true;
                     break;
 
@@ -343,7 +359,33 @@ int main()
                     CameraOrigin = glm::vec3(0);
                     refresh = true;
                     break;
+
+                case SDLK_LEFTBRACKET:
+                    ReflectionRate -= 1;
+                    if (ReflectionRate < 0) {
+                        ReflectionRate = 0;
+                    }
+                    refresh = true;
+                    break;
+
+                case SDLK_RIGHTBRACKET:
+                    ReflectionRate++;
+                    refresh = true;
+                    break;
+
+                case SDLK_r:
+                    EnableReflections = !EnableReflections;
+                    refresh = true;
+                    break;
+
+                case SDLK_b:
+                    WhiteBackground = !WhiteBackground;
+                    refresh = true;
+                    break;
                 }
+
+
+
 
             }
         }
