@@ -29,6 +29,7 @@ bool Plane::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out) {
 		out.distance = t;
 		out.normal = normal;
 		out.intersectionPoint = RayOrigin + t * RayDir;
+		out.shape = this;
 
 		return (t >= 0);
 	}

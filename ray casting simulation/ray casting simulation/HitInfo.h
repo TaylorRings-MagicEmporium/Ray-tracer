@@ -1,5 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "Shape.h"
+
+
+class Shape;
 
 struct HitInfo {
 
@@ -7,4 +11,5 @@ struct HitInfo {
 	float distance;
 	glm::vec3 intersectionPoint;
 	glm::vec3 normal;
+	Shape* shape;
 };

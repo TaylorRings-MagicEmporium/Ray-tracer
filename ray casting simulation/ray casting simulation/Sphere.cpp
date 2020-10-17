@@ -39,5 +39,6 @@ bool Sphere::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out) 
     out.distance = t0;
     out.intersectionPoint = RayOrigin + t0 * RayDir;
     out.normal = glm::normalize(out.intersectionPoint - position);
+    out.shape = this;
     return true;
 }

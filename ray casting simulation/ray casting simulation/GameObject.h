@@ -17,7 +17,8 @@ public:
 
 	void AddShape(Shape* sh);
 	BoundingBox BB;
+	std::vector<Shape*> BBshapes;
 	bool AvoidBox = false;
-	std::vector<Shape*> ShapeList;
+	void CreateOctree(std::vector<Shape*> BBShapeList);
 };
 
