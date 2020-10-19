@@ -10,11 +10,14 @@ public:
 	glm::vec3 axisSize;
 	glm::vec3 gridSize;
 
+	glm::vec3 middleBox;
+
 	std::vector<glm::vec3> GridPositions;
 
 	AreaLight(glm::vec3 position, glm::vec3 intensity, glm::vec3 axisSize ,glm::vec3 gridSize);
 	void GeneratePoints();
 	void ChangeSampleRate(int sampleRate);
+	glm::vec3 GetNoise(int randVal, int max);
 
 };
 

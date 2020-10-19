@@ -16,7 +16,7 @@
 #include <vector>
 #include "BoundingBox.h"
 #include <thread>
-
+#include <random>
 
 #include <SDL2/SDL.h>
 #undef main
@@ -27,7 +27,7 @@ const int HEIGHT = 480;
 
 SDL_Event event;
 
-glm::vec3 CameraOrigin = glm::vec3(0,1,0);
+glm::vec3 CameraOrigin = glm::vec3(0,3,0);
 bool Enable_Shadows = false;
 int ReflectionRate = 0;
 bool EnableReflections = false;
@@ -38,16 +38,15 @@ int SampleRate = 0;
 
 glm::vec3** image;
 std::vector<GameObject> objects;
-AreaLight AL = AreaLight(glm::vec3(1, 10, 1), glm::vec3(1.0, 1.0, 1.0), glm::vec3(5, 5, 5), glm::vec3(0,0,0));
+AreaLight AL = AreaLight(glm::vec3(0, 10, 0), glm::vec3(1.0, 1.0, 1.0), glm::vec3(9, 9, 1), glm::vec3(0,0,0));
 float ep = 1e-4;
 float IAR = (float)WIDTH / (float)HEIGHT; // these need to be FLOAT
 SDL_Window* window = NULL;
 SDL_Surface* screenSurface = NULL;
 
 int NoRayCasts = WIDTH * HEIGHT;
-long int NoRayPrimIntersectFunctions = 0;
-long int NoBoxRayIntersect = 0;
-long int NoRayPrimHits = 0;
+long int NoRayPrimFuncExecuted = 0; // number of intersections executed (in general)
+long int NoRayPrimHits = 0; // number of sucessful hits (when intersection is true)
 
 
 bool InitSDL(SDL_Window*& window, SDL_Surface*& screenSurface) 
@@ -110,11 +109,10 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
     glm::vec3 PixelColour = Background; // default is white
     glm::vec3 rayDir = glm::normalize(RayDirection);
     for (int a = 0; a < objects.size(); a++) {
-        NoBoxRayIntersect++;
         std::vector<Shape*>returnedShapes;
         if (objects[a].BB.IntersectTest(rayPos, rayDir,returnedShapes) || objects[a].AvoidBox) {
             for (int b = 0; b < returnedShapes.size(); b++) {
-                NoRayPrimIntersectFunctions++;
+                NoRayPrimFuncExecuted++;
                 if (returnedShapes[b]->IntersectTest(rayPos, rayDir, dump)) {//if true and output is t
                     NoRayPrimHits++;
                     if (dump.distance < smallestT) {
@@ -131,6 +129,10 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
 
     if (closestObject != -1) {
 
+        static thread_local std::mt19937 gen;
+        //std::default_random_engine gen;
+        std::uniform_int_distribution<int> dist(1, 1000);
+
         float success = 0;
         if (Enable_Shadows) {
             int HitsDetected = 0;
@@ -138,13 +140,16 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
             {
                 bool pass = false;
                 glm::vec3 lightRay = AL.GridPositions[i] - smallestH.intersectionPoint; // calculate light ray
+                if (SampleRate > 1) {
+                    lightRay += AL.GetNoise(dist(gen), 1000);
+                }
+
                 for (int a = 0; a < objects.size(); a++) { //for each gameobject
                     if (closestObject != a) { // if the shape is not in current closest object, then continue with intersection
-                        NoBoxRayIntersect++;
                         std::vector<Shape*>returnedShapes;
                         if (objects[a].BB.IntersectTest(smallestH.intersectionPoint + smallestH.normal * ep, glm::normalize(lightRay), returnedShapes) || objects[a].AvoidBox) {
                             for (int b = 0; b < returnedShapes.size(); b++) { //and for each shape in that gameobject 
-                                NoRayPrimIntersectFunctions++;
+                                NoRayPrimFuncExecuted++;
                                 if (returnedShapes[b]->IntersectTest(smallestH.intersectionPoint + smallestH.normal * ep, glm::normalize(lightRay), dump)) {
                                     NoRayPrimHits++;
                                     HitsDetected++;
@@ -156,9 +161,11 @@ glm::vec3 Trace(glm::vec3 rayPos, glm::vec3 RayDirection, int CURRENT_DEPTH, int
 
                     }
                     else {
+                        std::vector<Shape*>returnedShapes;
+                        objects[a].BB.IntersectTest(smallestH.intersectionPoint + smallestH.normal * ep, glm::normalize(lightRay), returnedShapes);
                         for (int b = 0; b < objects[a].BB.ContainedShapes.size(); b++) {
                             if (closestShape != b) { // test whether its also not the closest shape in that object
-                                NoRayPrimIntersectFunctions++;
+                                NoRayPrimFuncExecuted++;
                                 if (objects[a].BB.ContainedShapes[b]->IntersectTest(smallestH.intersectionPoint + smallestH.normal * ep, glm::normalize(lightRay), dump)) {
                                     NoRayPrimHits++;
                                     HitsDetected++;
@@ -255,7 +262,7 @@ void RefreshScreen(SDL_Surface* screenSurface) {
 
     if (EnableMultiThread) {
         std::vector<std::thread> threads;
-        const int threadCount = 32;
+        const int threadCount = 16;
 
         for (int i = 0; i < threadCount; i++) {
             threads.push_back(std::thread(MultiThread, i * WIDTH / threadCount, (i + 1) * WIDTH / threadCount));
@@ -276,17 +283,15 @@ void RefreshScreen(SDL_Surface* screenSurface) {
     std::cout << "__________ STATISTICS __________" << std::endl;
     std::cout << "Time passed: " << (float)(SDL_GetTicks() - runningTimer) / 1000.0f << " seconds" << std::endl;
     std::cout << "Total number of rays in object detection: " << NoRayCasts << std::endl;
-    std::cout << "Number of times ray-prim intersect is called: " << NoRayPrimIntersectFunctions << std::endl;
+    std::cout << "Number of times ray-prim intersect executed: " << NoRayPrimFuncExecuted << std::endl;
     std::cout << "Number of successful ray-Prim hits: " << NoRayPrimHits << std::endl;
-    std::cout << "Number of Bounding Box tests: " << NoBoxRayIntersect << std::endl;
     std::cout << std::endl;
     std::cout << "Reflection Level: " << ReflectionRate << std::endl;
     std::cout << "Shadow Level: " << SampleRate << std::endl;
     std::cout << "Multithreading: " << EnableMultiThread << std::endl;
 
     NoRayPrimHits = 0;
-    NoRayPrimIntersectFunctions = 0;
-    NoBoxRayIntersect = 0;
+    NoRayPrimFuncExecuted = 0;
 }
 
 int main()
@@ -300,40 +305,55 @@ int main()
     // SETUP COUNTER
     
     GameObject g = GameObject(glm::vec3(0, 0, 0));
-    //g.AddShape(new Sphere(glm::vec3(0, 4, -20), 4, glm::vec3(1.00,0.32,0.36), 80.0f)); // red sphere
+
+    //SCENE 1
+    //g.AddShape(new Sphere(glm::vec3(0, 1, -5), 1, glm::vec3(1.00,0.32,0.36), 80.0f)); // red sphere
     //objects.push_back(g);
 
     //g = GameObject(glm::vec3(0, 0, 0));
-    //g.AddShape(new Sphere(glm::vec3(5, 2, -15), 2, glm::vec3(0.9, 0.76, 0.46), 80.0f)); // green sphere
+    //g.AddShape(new Sphere(glm::vec3(8, 2, -15), 2, glm::vec3(0.9, 0.76, 0.46), 80.0f)); // green sphere
     //objects.push_back(g);
 
     //g = GameObject(glm::vec3(0, 0, 0));
-    //g.AddShape(new Sphere(glm::vec3(5, 3, -25), 3, glm::vec3(0.65, 0.77, 0.97), 80.0f)); // blue sphere
+    //g.AddShape(new Sphere(glm::vec3(8, 3, -25), 3, glm::vec3(0.65, 0.77, 0.97), 80.0f)); // blue sphere
     //objects.push_back(g);
 
     //g = GameObject(glm::vec3(0, 0, 0));
-    //g.AddShape(new Sphere(glm::vec3(-5.5, 3, -10), 3, glm::vec3(0.9, 0.9, 0.9), 80.0f)); // cyan sphere
+    //g.AddShape(new Sphere(glm::vec3(-10, 3, -10), 3, glm::vec3(0.9, 0.9, 0.9), 80.0f)); // cyan sphere
     //objects.push_back(g);
 
-    g = GameObject(glm::vec3(2, 2, -7));
-    g.AddMesh("OBJ files/teapot_simple_smooth.obj", glm::vec3(0.5, 0.5, 0), 100.0f);
+    //g = GameObject(glm::vec3(0, 2, -14));
+    //g.AddMesh("OBJ files/Full_Car_Blend.obj", glm::vec3(0.5, 0.5, 0), 100.0f);
+    //objects.push_back(g);
+
+
+    //SCENE 2
+    g.AddShape(new Sphere(glm::vec3(0, 4, -20), 4, glm::vec3(1.00, 0.32, 0.36), 30.0f)); // red sphere
     objects.push_back(g);
 
-    //g = GameObject(glm::vec3(0, 0, 0));
-    //g.AddShape(new Triangle(glm::vec3(-1, 1, -1), glm::vec3(-1.9, -1, -2), glm::vec3(1.6, -0.5, -2), glm::normalize(glm::vec3(0.0, 0.6, 1.0)), glm::vec3(-0.4, -0.4, 1.0), glm::vec3(0.4, -0.4, 1.0), glm::vec3(0.7, 0.7, 0.0), 20));
+    g = GameObject(glm::vec3(0, 0, 0));
+    g.AddShape(new Sphere(glm::vec3(5, 2, -15), 2, glm::vec3(0.9, 0.76, 0.46), 80.0f)); // green sphere
+    objects.push_back(g);
+
+    g = GameObject(glm::vec3(0, 0, 0));
+    g.AddShape(new Sphere(glm::vec3(5, 3, -25), 3, glm::vec3(0.65, 0.77, 0.97), 80.0f)); // blue sphere
+    objects.push_back(g);
+
+    g = GameObject(glm::vec3(0, 0, 0));
+    g.AddShape(new Sphere(glm::vec3(-5.5, 3, -15), 3, glm::vec3(0.9, 0.9, 0.9), 5.0f)); // cyan sphere
+    objects.push_back(g);
+
+    //g = GameObject(glm::vec3(2.5, 2, -7));
+    //g.AddMesh("OBJ files/teapot_simple_smooth.obj", glm::vec3(0.5, 0.5, 0), 100.0f);
     //objects.push_back(g);
+
+
 
     g = GameObject(glm::vec3(0, 0, 0));
     g.AddShape(new Plane(glm::vec3(-10, 0, -10), glm::vec3(0, 1, 0), glm::vec3(0.8, 0.8, 0.8), 20.0f)); // light gray plane
     g.AvoidBox = true;
     objects.push_back(g);
     
-    //ShapeList.push_back(new Triangle(glm::vec3(0, 1, -2), glm::vec3(-1.9, -1, -2), glm::vec3(1.6, -0.5, -2), glm::normalize(glm::vec3(0.0,0.6,1.0)),glm::vec3(-0.4,-0.4,1.0),glm::vec3(0.4,-0.4,1.0),glm::vec3(0.7,0.7,0.0),100));
-
-
-
-    //STATS 
-    //float fullRenderPercentage = (float)WIDTH * (float)HEIGHT;
 
     image = new glm::vec3 * [WIDTH];
     for (int i = 0; i < WIDTH; i++) image[i] = new glm::vec3[HEIGHT];
@@ -382,7 +402,7 @@ int main()
 
                 case SDLK_HASH:
                     std::cout << "CAMERA RESET" << std::endl;
-                    CameraOrigin = glm::vec3(0,1,0);
+                    CameraOrigin = glm::vec3(0, 3, 0);
                     refresh = true;
                     break;
 
@@ -409,7 +429,7 @@ int main()
                     WhiteBackground = !WhiteBackground;
                     refresh = true;
                     break;
-                
+
                 case SDLK_COMMA:
                     SampleRate -= 1;
                     if (SampleRate < 1) {
@@ -431,7 +451,7 @@ int main()
                     AL.ChangeSampleRate(SampleRate);
                     refresh = true;
                     break;
-                
+
                 case SDLK_m:
 
                     EnableMultiThread = !EnableMultiThread;
@@ -444,10 +464,6 @@ int main()
                     refresh = true;
                     break;
                 }
-
-
-
-
             }
         }
 

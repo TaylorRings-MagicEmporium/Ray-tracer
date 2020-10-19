@@ -6,8 +6,6 @@ BoundingBox::BoundingBox() {
 
 bool BoundingBox::IntersectTest(glm::vec3 rayOri, glm::vec3 rayDir, std::vector<Shape*>& returnedList) {
 
-	float tMinX = 0, tMinY = 0, tMinZ = 0, tMaxX = 0, tMaxY = 0, tMaxZ = 0, tMin,tMax;
-
 	float tmin = (boxMin.x - rayOri.x) / rayDir.x;
 	float tmax = (boxMax.x - rayOri.x) / rayDir.x;
 
@@ -35,18 +33,12 @@ bool BoundingBox::IntersectTest(glm::vec3 rayOri, glm::vec3 rayDir, std::vector<
 	if ((tmin > tzmax) || (tzmin > tmax))
 		return false;
 
-	if (tzmin > tmin)
-		tmin = tzmin;
-
-	if (tzmax < tmax)
-		tmax = tzmax;
-
 	if (this->children.empty()) {
 		returnedList.insert(returnedList.end(), ContainedShapes.begin(), ContainedShapes.end());
 	}
 	else {
 
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < this->children.size(); i++) {
 			this->children[i].IntersectTest(rayOri, rayDir, returnedList);
 		}
 	}

@@ -19,6 +19,7 @@ public:
 	BoundingBox BB;
 	std::vector<Shape*> BBshapes;
 	bool AvoidBox = false;
-	void CreateOctree(std::vector<Shape*> BBShapeList);
+	int NoBoxes = 0;
+	void CreateOctree(BoundingBox* BB, int CURRENT_LEVEL,int MAX_LEVEL);
 };
 
