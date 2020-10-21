@@ -35,9 +35,11 @@ bool Triangle::IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out
 	glm::vec3 edge2 = pointC - pointA;
 
 	glm::vec3 dist = (RayOrigin - pointA);
-	glm::vec3 perV = glm::cross(RayDir, edge2);
+	glm::vec3 perV = glm::cross(RayDir, edge2); // the edges and cross product create a triple scalar product to be used for the area of the triangle.
 	float u = glm::dot(dist, perV) / glm::dot(edge1, perV);
 	float v = glm::dot(RayDir, glm::cross(dist, edge1)) / glm::dot(edge1, perV);
+
+	// the u,v and hidden w are the percentages of where the hit point is relative to the 3 respective vectors that constructed the triangle
 
 	if (u < 0 || u > 1) {
 		return false;

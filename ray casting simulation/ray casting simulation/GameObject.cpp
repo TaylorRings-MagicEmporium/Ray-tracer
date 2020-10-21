@@ -39,6 +39,15 @@ void GameObject::AddShape(Shape* sh) {
 }
 
 void GameObject::CreateOctree(BoundingBox* BB, int CURRENT_LEVEL, int MAX_LEVEL) {
+
+    // the way that CreateOctree works is:
+    //1. initally produce 8 small bounding boxes using the size of the parent
+    //2. allocate any triangles that fit into any of the smaller boxes. it's possible to have a triangle
+    // in the 2 boxes at the same time due to the triangle's unknown size and position.
+    //3. if any of the boxes have no shapes allocated, then it is removed from the children list as it's pointless to further continue with it
+    //4. if the max depth has not been reached, then the function is called for the children. this is repeated until the max depth has been reached.
+    //5. in the end, the intersection code will go through the boxes in a hierarchy style and creates a list of shapes that could possibly be intersected with.
+
     glm::vec3 diff = glm::abs(BB->boxMax - BB->boxMin)/2.0f;
     for (int x = 0; x < 2; x++) {
         for (int y = 0; y < 2; y++) {
@@ -93,12 +102,3 @@ void GameObject::CreateOctree(BoundingBox* BB, int CURRENT_LEVEL, int MAX_LEVEL)
     }
 
 }
-
-//if ((BBShapeList[a]->Smallest.x) > BB.children[b].boxMin.x && (BBShapeList[a]->Biggest.x) < BB.children[b].boxMax.x) {
-//    if ((BBShapeList[a]->Smallest.y) > BB.children[b].boxMin.y && (BBShapeList[a]->Biggest.y) < BB.children[b].boxMax.y) {
-//        if ((BBShapeList[a]->Smallest.z) > BB.children[b].boxMin.z && (BBShapeList[a]->Biggest.z) < BB.children[b].boxMax.z) {
-//            BB.children[b].ContainedShapes.push_back(BBShapeList[a]);
-//            error = false;
-//        }
-//    }
-//}

@@ -6,6 +6,10 @@ BoundingBox::BoundingBox() {
 
 bool BoundingBox::IntersectTest(glm::vec3 rayOri, glm::vec3 rayDir, std::vector<Shape*>& returnedList) {
 
+
+	// this code block has been slightly modified from the ray-box intersection code
+	// from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
+	// CODE BLOCK START
 	float tmin = (boxMin.x - rayOri.x) / rayDir.x;
 	float tmax = (boxMax.x - rayOri.x) / rayDir.x;
 
@@ -33,6 +37,10 @@ bool BoundingBox::IntersectTest(glm::vec3 rayOri, glm::vec3 rayDir, std::vector<
 	if ((tmin > tzmax) || (tzmin > tmax))
 		return false;
 
+	//CODE BLOCK END
+
+
+	// this is used to refine the shape list by iterating through the children.
 	if (this->children.empty()) {
 		returnedList.insert(returnedList.end(), ContainedShapes.begin(), ContainedShapes.end());
 	}
@@ -48,6 +56,6 @@ bool BoundingBox::IntersectTest(glm::vec3 rayOri, glm::vec3 rayDir, std::vector<
 }
 
 void BoundingBox::AdjustBox(glm::vec3 boxMin, glm::vec3 boxMax) {
-		this->boxMin = glm::min(this->boxMin, boxMin);
-		this->boxMax = glm::max(this->boxMax, boxMax);
+	this->boxMin = glm::min(this->boxMin, boxMin);
+	this->boxMax = glm::max(this->boxMax, boxMax);
 }

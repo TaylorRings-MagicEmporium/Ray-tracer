@@ -24,7 +24,6 @@ void AreaLight::GeneratePoints() {
 	//float RandVal;
 	glm::vec3 randPos;
 
-
 	for (int x = 0; x < gridSize.x; x++) {
 		for (int y = 0; y < gridSize.y; y++) {
 			for (int z = 0; z < gridSize.z; z++) {

@@ -23,17 +23,20 @@ public:
 	glm::vec3 Biggest;
 	
 
-
+	// intersectTest is used to test whether a ray hit a primitive of the scene.
 	virtual bool IntersectTest(glm::vec3 RayOrigin, glm::vec3 RayDir, HitInfo& out) = 0;
 
+	// Calculates the ambient light of the shape
 	glm::vec3 GetAmbientLight() {
 		return ambientColour * ambientIntensity;
 	}
 
+	// Calculates the diffuse light of the shape using the light and the light ray
 	glm::vec3 GetDiffuseLight(Light* light, glm::vec3 LI, glm::vec3 IntersectionNormal) {
 		return diffuseColour * light->intensity * glm::max(0.0f, glm::dot(LI, IntersectionNormal));
 	}
 
+	//Calculates the Specular light of the shape using the light and the light ray
 	glm::vec3 GetSpecularLight(Light* light, glm::vec3 LI, glm::vec3 IntersectionNormal, glm::vec3 RayDir) {
 		glm::vec3 r = LI - 2.0f * glm::dot(LI, IntersectionNormal) * IntersectionNormal;
 		//glm::vec3 r = glm::reflect(LI, IntersectionNormal);

@@ -5,6 +5,7 @@
 
 class Shape;
 
+// Hitinfo is used to contain various values like distance and hit point without it being stored in the shape itself.
 struct HitInfo {
 
 	HitInfo() {};
